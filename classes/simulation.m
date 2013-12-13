@@ -170,6 +170,12 @@ methods
             YY = 0;
         end
         
+        % Check whether curvature of impinging wavefront was differently
+        % set
+        if isempty(obj.rr)
+            obj.rr = obj.r
+        end
+        
         % Grating Operators
         ds = sqrt(obj.rr.^2+XX.^2+YY.^2)-obj.rr;   % beam diverg. phase shift
         U  = exp(i.*obj.k.*(ds + obj.rr));         % (1) impinging spherical wave
