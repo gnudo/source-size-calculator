@@ -189,8 +189,7 @@ methods
         f = peak/four(1);
     end
     function Save2img (obj,img,n)
-        % saves img to <dest> under <000n.tif>
-        % TODO: probably obsolete
+        % saves img to <obj.nameDest> under <000n.tif> at 16bit tif images
         zspace = '0000';
         zer=zspace(1:end-length(num2str(n)));
         file=sprintf('%s/%s%d.tif',obj.nameDest,zer,n)

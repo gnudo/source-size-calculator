@@ -173,7 +173,7 @@ methods
         % Check whether curvature of impinging wavefront was differently
         % set
         if isempty(obj.rr)
-            obj.rr = obj.r
+            obj.rr = obj.r;
         end
         
         % Grating Operators
@@ -259,10 +259,13 @@ methods
         Uf  = fftshift(fft2(ifftshift(U)));           % FFT of intensity
         U   = abs(fftshift(ifft2(ifftshift(Uf.*gam))));
     end
-    function U = scale2Det (obj, U0)
-        % scale Talbot-carpet to the resolution of the detector
-        % TODO: remove hard-coded value here
-        psize = 0.38e-6;                          % [m] px-size of detector
+    function U = scale2Det (obj, U0, psize)
+        % scales Talbot-carpet to the pixel size (psize) of the detector.
+        % if the images are not cropped, then obj.plotper is set with
+        % obj.periods
+        if isempty(obj.plotper)
+            obj.plotper = obj.periods;
+        end
         l     = obj.plotper.*obj.a;               % [m] size of FOV
         res_o = length(obj.x1:obj.x2);            % [1] original resoultion
         res_n = round(obj.plotper.*obj.a./psize); % [1] new resolution
