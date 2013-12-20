@@ -1,6 +1,6 @@
 classdef simulation < handle
 % contains methods for simulating a spherical wave propagation after a
-% grating in 1D
+% grating in 1D and 2D
     properties (Constant)
         % natural constants
         c   = 299792458;              % [m/s]
@@ -62,6 +62,9 @@ methods
         % original img
         if rem(value,int32(value)) ~= 0
             error('number of period must be an INTEGER');
+        end
+        if isempty(obj.padding)
+            obj.padding = obj.N;
         end
         obj.plotper = value;
         obj.pxperiod=obj.N/obj.periods;   % px per period
@@ -132,6 +135,9 @@ methods
         end
         
         % ZEROPADDING grating (only if padding > N)mod
+        if isempty(obj.padding)
+            obj.padding = obj.N; % will become obsolete (substitute with N)
+        end
         if (obj.padding ~= obj.N)
             gra0 = zeros(1,obj.padding);
             gra0(1,(obj.N/2+1):(3*obj.N/2))=G;
@@ -173,7 +179,7 @@ methods
         % Check whether curvature of impinging wavefront was differently
         % set
         if isempty(obj.rr)
-            obj.rr = obj.r
+            obj.rr = obj.r;
         end
         
         % Grating Operators
@@ -259,10 +265,13 @@ methods
         Uf  = fftshift(fft2(ifftshift(U)));           % FFT of intensity
         U   = abs(fftshift(ifft2(ifftshift(Uf.*gam))));
     end
-    function U = scale2Det (obj, U0)
-        % scale Talbot-carpet to the resolution of the detector
-        % TODO: remove hard-coded value here
-        psize = 0.38e-6;                          % [m] px-size of detector
+    function U = scale2Det (obj, U0, psize)
+        % scales Talbot-carpet to the pixel size (psize) of the detector.
+        % if the images are not cropped, then obj.plotper is set with
+        % obj.periods
+        if isempty(obj.plotper)
+            obj.plotper = obj.periods;
+        end
         l     = obj.plotper.*obj.a;               % [m] size of FOV
         res_o = length(obj.x1:obj.x2);            % [1] original resoultion
         res_n = round(obj.plotper.*obj.a./psize); % [1] new resolution
