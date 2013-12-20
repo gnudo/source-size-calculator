@@ -1,6 +1,6 @@
 classdef simulation < handle
 % contains methods for simulating a spherical wave propagation after a
-% grating in 1D
+% grating in 1D and 2D
     properties (Constant)
         % natural constants
         c   = 299792458;              % [m/s]
