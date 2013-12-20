@@ -1,27 +1,17 @@
 classdef analysis < handle
 % contains all analysis tools for loading experimental data and visibility 
 % processing for both experimental and simulation data
-    properties (Constant)
-        % constants
-        psize   = 0.38e-6;  % [m] px size of detector
-        r       = 26.3;     % [m] distance source <-> grid (exp. setup)
-        a       = 6.84e-6;  % [m] grating period
-        range   = 1.1;      % [m] range of detector movement
-    end
     properties
         % constants from calling script (TOMCAT secific things)
-        nameData    % name of data
         nameDest    % destination directory (full path)
-        ndarks      % number of dark img-s in beginning
-        noffset     % offset to 1st img
-        nexp        % factor of multiple imgages for longer exposure time
         z           % propagation distances (lines --> different data sets)
         usewin      % switch whether to use window function
+        psize       % [m] px size of detector
+        r           % [m] distance source <-> grid (exp. setup)
+        a           % [m] grating period
     end
     properties
         % calculated values from parameters
-        src         % source path
-        dark        % dark image
         per         % [px] number of px per period
         per_approx  % [px] approx. period due to beam divergence
         M           % magnification due to beam divergence
@@ -30,27 +20,6 @@ classdef analysis < handle
 % Methods
 %--------------------------------------------------------------------------
 methods
-    function set.nameData(obj,value)
-        % when setting "nameData" the file "dataInfo.csv" is loaded where
-        % the first line represents the data names with corresponding
-        % columns containing the explicit path. if an incorrect name is
-        % given, the while loop doesn't throw a return and the error is
-        % given. (TOMCAT specific)
-        obj.nameData = value;
-        data  = fn_read_mixed_csv('dataInfo.csv',',');
-        k = 1;
-        while k <= size(data,2)
-            if strcmp(value, data{1,k}) == 1
-                obj.src{1} = data{2,k};
-                if length(data{3,k}) > 0
-                    obj.src{2} = data{3,k};
-                end
-                return
-            end
-            k = k+1;
-        end
-        error('NO such datafile! check "dataInfo.csv" or data-src')
-    end
     function set.nameDest(obj,value)
         % set destination directory and mkdir
         mkdir(value);
@@ -64,66 +33,12 @@ methods
         obj.per = obj.a/obj.psize;
         obj.per_approx = obj.per.*obj.M;
     end
-    function img     = loadDarks (obj)
-        % loads dark img-s from given parameters. if file set is divided
-        % into 2 subfolders, then img is 3D-matrix. (TOMCAT specific)
-        for ii = 1:length(obj.src)      % loop through subsets of data
-            files = dir([obj.src{ii} '/*.tif']);
-            for kk = 1:obj.ndarks       % loop through number of darks
-                file = sprintf('%s/%s',obj.src{ii}, files(kk).name)
-                darks(:,:,kk)=double(imread(file));
-            end
-        img(:,:,ii) = double(median(darks,3));
-        end
-        obj.dark = img;
-    end
     function [x1 x2] = middleROI(obj,reso,size)
         % places an small array (reso) in the middle of a big array (size)
         % and gives the start and ending coordinates
         space = size-reso;
         x1 = round(space/2);
         x2 = x1 + reso-1;
-    end
-	function img     = loadAndCorrect (obj,set,n)
-        % loads imgs and (dark+flat field corrected). "even": img, "odd":
-        % flat (TOMCAT specific)
-        files = dir([obj.src{set} '/*.tif']);
-        ind   = obj.noffset + 2*n;
-        file1 = sprintf('%s/%s',obj.src{set}, files(ind-1).name)
-        file2 = sprintf('%s/%s',obj.src{set}, files(ind).name)
-        
-        img_tmp1 = double(imread(file1,'tif'));      % flat
-        img_tmp2 = double(imread(file2,'tif'));      % image
-        img = (img_tmp2-obj.dark(:,:,set)) ./ (img_tmp1-obj.dark(:,:,set));
-    end
-    function img     = loadMultiple (obj,set,n)
-        % load multiple img-s w/o flat-/darkfield-correction
-        % TODO: probably obsolete
-        files = dir([obj.src{set} '/*.tif']);
-        strt  = (obj.noffset+1+(n-1)*(obj.nexp+1));
-        ende  = strt+obj.nexp;
-        file  = sprintf('%s/%s',obj.src{set}, files(strt).name)
-        img = 0;
-        for ind = (strt+1):ende
-            file     = sprintf('%s/%s',obj.src{set}, files(ind).name)
-            img = img + double(imread(file,'tif'))-obj.dark(:,:,set);      % image
-        end
-        %img = img./mean((mean(img)));
-    end
-    function img     = loadMultipleCorr (obj,set,n)
-        % load multiple img-s with flat-/darkfield-correction
-        % TODO: probably obsolete
-        files = dir([obj.src{set} '/*.tif']);
-        strt  = (obj.noffset+1+(n-1)*(obj.nexp+1));
-        ende  = strt+obj.nexp;
-        %file  = sprintf('%s/%s',obj.src{set}, files(strt).name)
-        img = 0;
-        for ind = (strt+1):ende
-            file     = sprintf('%s/%s',obj.src{set}, files(ind).name)
-            flat     = sprintf('%s/%s',obj.src{set}, files(ende+1).name);
-            img = img + (double(imread(file,'tif'))-obj.dark(:,:,set))./(double(imread(flat,'tif'))-obj.dark(:,:,set));      % image
-        end
-        %img = img./mean((mean(img)));
     end
     function img     = loadSmallImg (obj,ind)
         % loads "small images" created with Save2img and throws failure if
@@ -138,7 +53,12 @@ methods
         img   = double(imread(file,'tif'));
         img   = img./(2^16-1);
     end
-    function [Fv Fh] = visCalc (obj,img,set,n)
+    function [Fv Fh] = visCalc (obj,img,n)
+        % TODO: - remove "set" dependency
+        %       - change order of V and H (to be consistent with others)
+        if ~exist('set','var')
+            set = 1;        % will be obsolete...
+        end
         % analyses visibility of <img> in vertical and horizontal direction
         per = obj.per_approx(set,n);  % approximated period in [px]
         mittel=mean(mean(img));

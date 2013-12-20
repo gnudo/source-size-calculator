@@ -1,6 +1,10 @@
-% performs the fitting algorithm on the synthetic "experimental" data
+% Performs the fitting algorithm on "experimental" data, being located in
+% "b.nameDest" folder. To apply on arbitrary experimental data, adjust
+% section 1.) with correct parameters
+% TODO: - reduce redundancies and unite "simulation" and "analysis" classes
+%       - move object creation and class properties settings to fitfunc
 %--------------------------------------------------------------------------
-% Date: 2013-12-19
+% Date: 2013-12-20
 % Author: Goran Lovric
 %--------------------------------------------------------------------------
 close all;clc;clear;
@@ -8,66 +12,90 @@ addpath('../classes');
 addpath('../classes/xray-interaction-constants');
 addpath('../scripts');
 
-a = simulation;               % load methods for calculation
-b = analysis;                 % load method for saving images
+a = simulation;                   % load methods for calculation
+b = analysis;                     % load method for saving images
 
 %--------------------------------------------------------------------------
 % 1.) Experimental parameters + fitting parameter margins
 %--------------------------------------------------------------------------
-a.E       = 14;
-a.r       = 25;
-a.a       = 6.84e-6;          % [m] grating period
-a.periods = 32;               % grating-size (in terms of periods)
-a.N       = 2^13;             % number of particles --> 2^n !!!
-a.padding = 1*a.N;            % total number (with zero-padding)
-a.gHeight = 3.39e-6;          % height of grating structure
+b.nameDest = 'exp_data';          % folder that contains experimental data
+b.psize    = 0.38e-6;             % [m] px size of detector
+b.r        = 25;                  % [m] source-to-grating distance
+b.a        = 6.84e-6;             % [m] grating period
+b.z        = linspace(0,1.1,55);  % [m] experimental propagation distances
+b.usewin   = 1;                   % apply Tukey/Hanning window function
 
-dutDN   = 0.5;
-dutUP   = 0.54;
-angDN   = 0;
-angUP   = 4.2;
-src_DN = 0e-6;
-src_UP = 200e-6;
-range_sz = 1.5;
-ene_DN = a.E-0.5;
-ene_UP = a.E+0.5;
+a.E        = 14;                  % [keV] x-ray energy
+a.r        = b.r;                 % [m] radius of incidient wave curvature
+a.a        = b.a;                 % [m] grating period
+a.gHeight  = 3.39e-6;             % [m] height of grating structure
+a.periods  = 32;                  % grating-size (in terms of periods)
+a.N        = 2^13;                % number of particles (pixels)
 
-stepsz  = 3;
-iterat  = 4;
+dutDN  = 0.5;                     % [1] duty cycle lower limit
+dutUP  = 0.54;                    % [1] duty cycle upper limit
+angDN  = 0;                       % [°] grating angle lower limit
+angUP  = 4;                       % [°] grating angle upper limit
+src_DN = 0e-6;                    % [m] source size lower limit
+src_UP = 200e-6;                  % [m] source size upper limit
+ene_DN = a.E-0.5;                 % [keV] x-ray energy lower limit
+ene_UP = a.E+0.5;                 % [keV] x-ray energy upper limit
+s      = 1.5;                     % interval stretching factor (from paper)
+
+n_max  = 3;                       % number of intervals to be nested
+k_max  = 7;                       % number of iteration steps
 
 %--------------------------------------------------------------------------
-% analyze experimental data
+% 2.) Calculate Fourier coefficients from experimental data
 %--------------------------------------------------------------------------
-%b.nameData = 'exp_data';     % set <b.src>-folder with img-tifs
-b.nameDest = ['../' 'exp_data'];%b.nameData];
-points     = 55;     % number of measured distances
-b.z        = linspace(0,1.1,points);
-b.usewin = 1;
-
-for jj=1:points
-	img = b.loadSmallImg(jj);       % loads small images created
-    %img = img(54:520,54:520);
-    [Fv Fh] = b.visCalc(img,1,jj);
-    vert(jj) = Fv;
-    horz(jj) = Fh;
+for jj=1:length(b.z)
+	img     = b.loadSmallImg(jj); % load experimental Talbot imgs
+    [Fv Fh] = b.visCalc(img,jj);  % extract first Fourier coefficients
+    Fvv(jj) = Fv;
+    Fhh(jj) = Fh;
 end
+fourCoeffexp = [Fhh.' Fvv.'];
 
-fourCoeffexp = [horz.' vert.'];
-% 
-% fitpar = fitfunc(a,b,fourCoeffexp,dutUP,dutDN,angUP,angDN,src_UP, ...
-%                  src_DN,ene_UP,ene_DN,iterat,stepsz,range_sz,b.z, ...
-%                  ['synth_' 'kev_simFIT']);
-load('synth_kev_simFIT.mat')
+%--------------------------------------------------------------------------
+% 3.) Run fitting algorithm with the above parameters (or load results)
+%--------------------------------------------------------------------------
+if ~exist('results.mat', 'file')
+    fitpar = fitfunc(a,b,fourCoeffexp,dutUP,dutDN,angUP,angDN,src_UP, ...
+                     src_DN,ene_UP,ene_DN,k_max,n_max,s,b.z, 'results');
+end
+load('results.mat')
 
+%--------------------------------------------------------------------------
+% 4.) Print and plot the results
+%--------------------------------------------------------------------------
+
+% Source sizes
+clc;
+disp(['Hor. source size = ' num2str(m_srH(end)*1e6) ' micrometer']);
+disp(['Ver. source size = ' num2str(m_srV(end)*1e6) ' micrometer']);
+fprintf('\n');
+% Duty cycles
+disp(['Hor. duty cycle = ' num2str(m_dutH(end))]);
+disp(['Ver. duty cycle = ' num2str(m_dutV(end))]);
+fprintf('\n');
+% Angle
+disp(['Hor. angle = ' num2str(m_angH(end))]);
+disp(['Ver. angle = ' num2str(m_angV(end))]);
+
+% Plot Fourier coefficients
 fig1 = figure;
     set(fig1,'Position',[80 680 800 248]);
 subplot(1,2,1)
-    plot(horz./mean(horz))
-    hold on
-    plot(horzsim(:,end)./mean(horzsim(:,end)),'r')
-    hold off
+    plot(b.z,Fhh./mean(Fhh),'o')
+    hold on;
+    plot(b.z,horzsim(:,end)./mean(horzsim(:,end)),'k')
+    hold off;
+    xlim([0 b.z(end)]);
+    legend('experimental values','best fit')
 subplot(1,2,2)
-    plot(vert./mean(vert))
-    hold on
-    plot(vertsim(:,end)./mean(vertsim(:,end)),'r')
-    hold off
+    plot(b.z,Fvv./mean(Fvv),'ro')
+    hold on;
+    plot(b.z,vertsim(:,end)./mean(vertsim(:,end)),'k')
+    hold off;
+    xlim([0 b.z(end)]);
+    legend('experimental values','best fit')

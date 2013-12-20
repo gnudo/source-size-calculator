@@ -63,6 +63,9 @@ methods
         if rem(value,int32(value)) ~= 0
             error('number of period must be an INTEGER');
         end
+        if isempty(obj.padding)
+            obj.padding = obj.N;
+        end
         obj.plotper = value;
         obj.pxperiod=obj.N/obj.periods;   % px per period
         middle = obj.padding/2;
@@ -132,6 +135,9 @@ methods
         end
         
         % ZEROPADDING grating (only if padding > N)mod
+        if isempty(obj.padding)
+            obj.padding = obj.N; % will become obsolete (substitute with N)
+        end
         if (obj.padding ~= obj.N)
             gra0 = zeros(1,obj.padding);
             gra0(1,(obj.N/2+1):(3*obj.N/2))=G;
