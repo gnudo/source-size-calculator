@@ -4,10 +4,10 @@
 %       - include into class
 %       - rebase
 %       - ...
-function fitpar = fitfunc(a,b,fourCoeffexp,dutUP,dutDN,angUP,angDN,src_UP,src_DN,ene_UP,ene_DN,iterat,stepsz,range_sz,z,name)
+function fitpar = fitfunc(a,fourCoeffexp,dutUP,dutDN,angUP,angDN,src_UP,src_DN,ene_UP,ene_DN,k_max,n_max,s,z,name)
 % number of iterations
-NUM_ITERATIONS = 2 * stepsz^4 * iterat * length(z)
-COUNTER_NUM = stepsz^4 *iterat
+N_max = 2 * n_max^4 * k_max * length(z)     % Eq. (18) from paper
+COUNTER_NUM = n_max^4 *k_max
 
 a.plotper = 14;      % number of periods to be plotted --> sets a.x1, a.x2
 resolu    = 512;     % desired resolution
@@ -18,49 +18,43 @@ countH = 0;
 countV = 0;
 countVH = 0;
 
-d_dutH = (dutUP-dutDN)./2;
-m_dutH = (dutUP+dutDN)./2;
-d_dutV = d_dutH;
-m_dutV = m_dutH;
-d_angH = (angUP-angDN)./2;
-m_angH = (angUP+angDN)./2;
-d_angV = d_angH;
-m_angV = m_angH;
-d_srH = (src_UP-src_DN)./2;
-m_srH = (src_UP+src_DN)./2;
-d_srV = d_srH;
-m_srV = m_srH;
-d_ene = (ene_UP-ene_DN)./2;
-m_ene = (ene_UP+ene_DN)./2;
+a.n_max = n_max;
+a.k_max = k_max;
+a.s = s;
+
+dutHDN  = dutDN;
+dutVDN  = dutDN;
+dutHUP  = dutUP;
+dutVUP  = dutUP;
+angHDN  = angDN;
+angVDN  = angDN;
+angHUP  = angUP;
+angVUP  = angUP;
+srcH_DN = src_DN;
+srcV_DN = src_DN;
+srcH_UP = src_UP;
+srcV_UP = src_UP;
+
 lsHorz_tmp = 1e11;
 lsVert_tmp = 1e11;
 
-for ii=1:iterat
-dutiesH = linspace(m_dutH(end)-d_dutH,m_dutH(end)+d_dutH,stepsz+2);
-dutiesV = linspace(m_dutV(end)-d_dutV,m_dutV(end)+d_dutV,stepsz+2);
-anglesH = linspace(m_angH(end)-d_angH,m_angH(end)+d_angH,stepsz+2);
-anglesV = linspace(m_angV(end)-d_angV,m_angV(end)+d_angV,stepsz+2);
-srcH   = linspace(m_srH(end)-d_srH,m_srH(end)+d_srH,stepsz+2);
-srcV   = linspace(m_srV(end)-d_srV,m_srV(end)+d_srV,stepsz+2);
-ene     = linspace(m_ene(end)-d_ene,m_ene(end)+d_ene,stepsz+2);
+for ii=1:a.k_max
+[dutiesH d_dutiesH] = a.nestIntervals(dutHDN,dutHUP);
+[dutiesV d_dutiesV] = a.nestIntervals(dutVDN,dutVUP);
+[anglesH d_anglesH] = a.nestIntervals(angHDN,angHUP);
+[anglesV d_anglesV] = a.nestIntervals(angVDN,angVUP);
+[srcH d_srcH]       = a.nestIntervals(srcH_DN,srcH_UP);
+[srcV d_srcV]       = a.nestIntervals(srcV_DN,srcV_UP);
+[ene d_ene]         = a.nestIntervals(ene_DN,ene_UP);
 
-% divide range by 3 for next round
-d_dutH = (d_dutH/stepsz).*range_sz;
-d_dutV = (d_dutV/stepsz).*range_sz;
-d_angH = (d_angH/stepsz).*range_sz;
-d_angV = (d_angV/stepsz).*range_sz;
-d_srH  = (d_srH/stepsz).*range_sz;
-d_srV  = (d_srV/stepsz).*range_sz;
-d_ene  = (d_ene/stepsz).*range_sz;
-
-for lene=2:stepsz+1
+for lene=1:a.n_max
  a.E = ene(lene);
- a.gHeight = 3.39e-6;
-for lsrc=2:stepsz+1
+ a.calcRefracAbsorb(17); % calculate delta & beta for grating with rho = 17
+for lsrc=1:a.n_max
   srcsz = [srcH(lsrc) srcV(lsrc)];
-  for lang=2:stepsz+1
+  for lang=1:a.n_max
     angles = [anglesH(lang) anglesV(lang)];
-    for ldut=2:stepsz+1
+	for ldut=1:a.n_max
       duties = [dutiesH(ldut) dutiesV(ldut)];
       counter = counter+1
       %--------------------------------------------------------------------
@@ -79,7 +73,7 @@ for lsrc=2:stepsz+1
           % --- visibility calcs
           per = M .* size(pwav,1)/a.plotper;        % period in [px]
           vec = pwav(:,ii);
-          fourCoeff(ii,kk) = b.vis1D (vec,per(ii));
+          fourCoeff(ii,kk) = a.vis1D (vec,per(ii));
         end
       end
 
@@ -93,9 +87,9 @@ for lsrc=2:stepsz+1
         lsHorz_tmp = lsHorz;
         countH = countH+1;
         fitH(countH) = lsHorz_tmp;
-        m_dutH(countH) = duties(1);
-        m_angH(countH) = angles(1);
-        m_srH(countH)  = srcsz(1);
+        [dutHDN dutHUP]   = a.setNewMinMax(duties(1),d_dutiesH);
+        [angHDN angHUP]   = a.setNewMinMax(angles(1),d_anglesH);
+        [srcH_DN srcH_UP] = a.setNewMinMax(srcsz(1),d_srcH);
         horzsim(:,countH) = fourCoeff(:,1);
         eneH(countH) = a.E;
       end % --> IF
@@ -103,9 +97,9 @@ for lsrc=2:stepsz+1
         lsVert_tmp = lsVert;
         countV = countV+1;
         fitV(countV) = lsVert_tmp;
-        m_dutV(countV) = duties(2);
-        m_angV(countV) = angles(2);
-        m_srV(countV)  = srcsz(2);
+        [dutVDN dutVUP]   = a.setNewMinMax(duties(2),d_dutiesV);
+        [angVDN angVUP]   = a.setNewMinMax(angles(2),d_anglesV);
+        [srcV_DN srcV_UP] = a.setNewMinMax(srcsz(2),d_srcV);
         vertsim(:,countV) = fourCoeff(:,2);
         eneV(countV) = a.E;
       end % --> IF 
@@ -119,15 +113,27 @@ end % --> lsrc
 end % --> ene
 end % --> iter
 
-fitpar
-m_dutH
-m_angH
-m_srH
-m_dutV
-m_angV
-m_srV
-m_ene
-
+% fitpar
+% m_dutH
+% m_angH
+% m_srH
+% m_dutV
+% m_angV
+% m_srV
+% m_ene
+m_dutH = (dutHDN + dutHUP) / 2;
+m_angH = (angHDN + angHUP) / 2;
+m_srH  = (srcH_DN + srcH_UP) / 2;
+m_dutV = (dutVDN + dutVUP) / 2;
+m_angV = (angVDN + angVUP) / 2;
+m_srV  = (srcV_DN + srcV_UP) / 2;
+m_ene = (ene_DN + ene_UP) /2;
+d_dutH = d_dutiesH;
+d_dutV = d_dutiesV;
+d_angH = d_anglesH;
+d_angV = d_anglesV;
+d_srH = d_srcH;
+d_srV = d_srcV;
 %--------------------------------------------------------------------------
 % 3.) Save to file
 %--------------------------------------------------------------------------

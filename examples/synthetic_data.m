@@ -9,20 +9,18 @@ addpath('../classes');
 addpath('../classes/xray-interaction-constants');
 
 a = simulation;                   % load methods for calculation
-b = analysis;                     % load method for saving 16bit tif images
 if isdir('exp_data')
     rmdir('exp_data','s');        % delete previously created files
 end
-b.nameDest = 'exp_data';          % destination folder for saving images
+a.nameDest = 'exp_data';          % destination folder for saving images
 
 %--------------------------------------------------------------------------
-% 1.) CONSTANTS
+% 1.) Parameters for synthetic data
 %--------------------------------------------------------------------------
 a.a       = 6.84e-6;              % [m] grating period
 a.r       = 25;                   % [m] radius of incidient wave curvature
 a.E       = 14;                   % [keV] x-ray energy
 a.srcsz   = [133e-6 52e-6];       % [m] TOMCAT src sizes
-
 a.periods = 48;                   % grating-size (in terms of periods)
 a.N       = 2^12;                 % number of particles (pixels)
 
@@ -41,6 +39,7 @@ gra = a.talbotGrid2D;
 %--------------------------------------------------------------------------
 % 3.) Wave field @ grating
 %--------------------------------------------------------------------------
+a.calcRefracAbsorb(17); % calculate delta & beta for grating with rho = 17
 f = a.waveFieldGrat(gra);
 
 %--------------------------------------------------------------------------
@@ -51,10 +50,10 @@ gauss = exp( (-x.^2./2) - (y.^2./2) );
 gauss = gauss./sum(gauss(:));
 
 for ii=1:length(z)
-    calc = a.waveFieldPropMutual2D(z(ii),f); % wave propagation
-    crop = a.scale2Det(calc,0.38e-6);        % scale to detector pixel size
+	calc = a.waveFieldPropMutual2D(z(ii),f); % wave propagation
+	crop = a.scale2Det(calc,0.38e-6);        % scale to detector pixel size
 	crop = conv2(crop,gauss,'same');         % simulate detector's PSF
-    crop = crop./4;                          % correct range in Talbot imgs
-    crop = crop(70:795,70:795);              % correct for border areas
-    b.Save2img(crop,ii);                     % save images
+	crop = crop./4;                          % correct range in Talbot imgs
+	crop = crop(70:795,70:795);              % correct for border areas
+	a.Save2img(crop,ii);                     % save images
 end
