@@ -24,8 +24,6 @@ classdef simulation < handle
         r          % [m] radius of incidient wave curvature
         srcsz      % [m] source size of beam for simulation
         rr         % [m] radius of incident wave curvature used for ML fit
-        n_max      % [1] number of intervals between min. and max. margins
-        k_max      % [1] number of iterations
         s          % [1] stretching factor
         % from analysis-class
         nameDest    % destination directory (full path)
@@ -48,6 +46,8 @@ classdef simulation < handle
         x1         % [px] px-value for plotting-ROI
         x2         % [px] px-value for plotting-ROI
         y0         % [m] grating coordinates (zero-padded)
+        dutDN_lim
+        dutUP_lim
         % from analysis-class
         per         % [px] number of px per period
         per_approx  % [px] approx. period due to beam divergence
@@ -393,19 +393,6 @@ methods
         first = first-1;                    % because cropping
         [peak pos] = max(four_crp((first-6):(first+6)));
         f = peak/four(1);
-    end
-    function [n_i del] = nestIntervals(obj,dn,up)
-        % nests n_max intervals according to first subroutine from the
-        % paper (Fig. 3)
-        del  = ( (up-dn)/2 ) / obj.n_max * obj.s;
-        n_i = linspace(dn,up,obj.n_max+2);
-        n_i =n_i(2:end-1);
-    end
-    function [min max] = setNewMinMax(obj,val,d_val)
-        % sets new "min" and "max" points according to the point val and
-        % it's margin d_val
-        min = val-d_val;
-        max = val+d_val;
     end
 	function plotWaveAtGrating(obj,f,gra)
         % plot grating <gra> and grating-wave-front <f> with absorption and

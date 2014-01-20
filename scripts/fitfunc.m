@@ -1,9 +1,8 @@
 % function containing the actual fit algorithm
 % TODO: - clean code
 %       - unify nomenclature
-%       - include into class
 %       - rebase
-%       - ...
+%       - use generic simulation+FourierCalc script (to be created)
 function fitpar = fitfunc(a,fourCoeffexp,dutUP,dutDN,angUP,angDN,src_UP,src_DN,ene_UP,ene_DN,k_max,n_max,s,z,name)
 % number of iterations
 N_max = 2 * n_max^4 * k_max * length(z)     % Eq. (18) from paper
@@ -18,44 +17,36 @@ countH = 0;
 countV = 0;
 countVH = 0;
 
-a.n_max = n_max;
-a.k_max = k_max;
-a.s = s;
-
-dutHDN  = dutDN;
-dutVDN  = dutDN;
-dutHUP  = dutUP;
-dutVUP  = dutUP;
-angHDN  = angDN;
-angVDN  = angDN;
-angHUP  = angUP;
-angVUP  = angUP;
-srcH_DN = src_DN;
-srcV_DN = src_DN;
-srcH_UP = src_UP;
-srcV_UP = src_UP;
+% Create interval objects for horizontal an vertial directions
+dc_H  = interval(dutDN,dutUP);
+dc_V  = interval(dutDN,dutUP);
+ang_H = interval(angDN,angUP);
+ang_V = interval(angDN,angUP);
+src_H = interval(src_DN,src_UP);
+src_V = interval(src_DN,src_UP);
+E     = interval(ene_DN,ene_UP);
 
 lsHorz_tmp = 1e11;
 lsVert_tmp = 1e11;
 
-for ii=1:a.k_max
-[dutiesH d_dutiesH] = a.nestIntervals(dutHDN,dutHUP);
-[dutiesV d_dutiesV] = a.nestIntervals(dutVDN,dutVUP);
-[anglesH d_anglesH] = a.nestIntervals(angHDN,angHUP);
-[anglesV d_anglesV] = a.nestIntervals(angVDN,angVUP);
-[srcH d_srcH]       = a.nestIntervals(srcH_DN,srcH_UP);
-[srcV d_srcV]       = a.nestIntervals(srcV_DN,srcV_UP);
-[ene d_ene]         = a.nestIntervals(ene_DN,ene_UP);
+for k=1:k_max
+dutiesH = dc_H.nestIntervals(n_max,s);
+dutiesV = dc_V.nestIntervals(n_max,s);
+anglesH = ang_H.nestIntervals(n_max,s);
+anglesV = ang_V.nestIntervals(n_max,s);
+srcH    = src_H.nestIntervals(n_max,s);
+srcV    = src_V.nestIntervals(n_max,s);
+ene     = E.nestIntervals(n_max,s);
 
-for lene=1:a.n_max
- a.E = ene(lene);
+for n_E=1:n_max
+ a.E = ene(n_E);
  a.calcRefracAbsorb(17); % calculate delta & beta for grating with rho = 17
-for lsrc=1:a.n_max
-  srcsz = [srcH(lsrc) srcV(lsrc)];
-  for lang=1:a.n_max
-    angles = [anglesH(lang) anglesV(lang)];
-	for ldut=1:a.n_max
-      duties = [dutiesH(ldut) dutiesV(ldut)];
+for n_sigma=1:n_max
+  srcsz = [srcH(n_sigma) srcV(n_sigma)];
+  for n_alpha=1:n_max
+    angles = [anglesH(n_alpha) anglesV(n_alpha)];
+	for n_dc=1:n_max
+      duties = [dutiesH(n_dc) dutiesV(n_dc)];
       counter = counter+1
       %--------------------------------------------------------------------
       for kk=1:2
@@ -87,9 +78,9 @@ for lsrc=1:a.n_max
         lsHorz_tmp = lsHorz;
         countH = countH+1;
         fitH(countH) = lsHorz_tmp;
-        [dutHDN dutHUP]   = a.setNewMinMax(duties(1),d_dutiesH);
-        [angHDN angHUP]   = a.setNewMinMax(angles(1),d_anglesH);
-        [srcH_DN srcH_UP] = a.setNewMinMax(srcsz(1),d_srcH);
+        dc_H.setNewMinMax(duties(1));
+        ang_H.setNewMinMax(angles(1));
+        src_H.setNewMinMax(srcsz(1));
         horzsim(:,countH) = fourCoeff(:,1);
         eneH(countH) = a.E;
       end % --> IF
@@ -97,43 +88,37 @@ for lsrc=1:a.n_max
         lsVert_tmp = lsVert;
         countV = countV+1;
         fitV(countV) = lsVert_tmp;
-        [dutVDN dutVUP]   = a.setNewMinMax(duties(2),d_dutiesV);
-        [angVDN angVUP]   = a.setNewMinMax(angles(2),d_anglesV);
-        [srcV_DN srcV_UP] = a.setNewMinMax(srcsz(2),d_srcV);
+        dc_V.setNewMinMax(duties(2));
+        ang_V.setNewMinMax(angles(2));
+        src_V.setNewMinMax(srcsz(2));
         vertsim(:,countV) = fourCoeff(:,2);
         eneV(countV) = a.E;
       end % --> IF 
       if (lsHorz+lsVert) < sumVH
         countVH = countVH+1;
         m_ene(countVH) = a.E;
+        E.setNewMinMax(a.E);
       end % --> IF 
-    end % --> ldut
-  end % --> lang
-end % --> lsrc
-end % --> ene
+    end % --> n_dc
+  end % --> n_alpha
+end % --> n_sigma
+end % --> n_E
 end % --> iter
 
-% fitpar
-% m_dutH
-% m_angH
-% m_srH
-% m_dutV
-% m_angV
-% m_srV
-% m_ene
-m_dutH = (dutHDN + dutHUP) / 2;
-m_angH = (angHDN + angHUP) / 2;
-m_srH  = (srcH_DN + srcH_UP) / 2;
-m_dutV = (dutVDN + dutVUP) / 2;
-m_angV = (angVDN + angVUP) / 2;
-m_srV  = (srcV_DN + srcV_UP) / 2;
-m_ene = (ene_DN + ene_UP) /2;
-d_dutH = d_dutiesH;
-d_dutV = d_dutiesV;
-d_angH = d_anglesH;
-d_angV = d_anglesV;
-d_srH = d_srcH;
-d_srV = d_srcV;
+m_dutH = (dc_H.DN +dc_H.UP)/2; %(dutHDN + dutHUP) / 2;
+m_angH = (ang_H.DN + ang_H.UP)/2; %(angHDN + angHUP) / 2;
+m_srH  = (src_H.DN + src_H.UP)/2; %(srcH_DN + srcH_UP) / 2;
+m_dutV = (dc_V.DN +dc_V.UP)/2; %(dutVDN + dutVUP) / 2;
+m_angV = (ang_V.DN + ang_V.UP)/2; %(angVDN + angVUP) / 2;
+m_srV  = (src_V.DN + src_V.UP)/2; %(srcV_DN + srcV_UP) / 2;
+m_ene = (E.DN + E.UP)/2; %(ene_DN + ene_UP) /2;
+d_dutH = dc_H.del;%d_dutiesH;
+d_dutV = dc_V.del;%d_dutiesV;
+d_angH = ang_H.del;%d_anglesH;
+d_angV = ang_V.del;%d_anglesV;
+d_srH = src_H.del;%d_srcH;
+d_srV = src_V.del;%d_srcV;
+d_ene = E.del;
 %--------------------------------------------------------------------------
 % 3.) Save to file
 %--------------------------------------------------------------------------
