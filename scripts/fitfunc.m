@@ -7,7 +7,6 @@ N_max = 2 * n_max^4 * k_max * length(a.z)     % Eq. (18) from paper
 COUNTER_NUM = n_max^4 *k_max
 
 a.plotper = 14;      % number of periods to be plotted --> sets a.x1, a.x2
-a.rr = a.r;
 
 counter = 0;
 countH = 0;
