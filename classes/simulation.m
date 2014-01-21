@@ -1,6 +1,7 @@
 classdef simulation < handle
 % contains methods for simulating a spherical wave propagation after a
-% grating in 1D and 2D
+% grating in 1D and 2D and analysis tools for loading experimental data
+% and visibility processing for both experimental and simulation data
     properties (Constant)
         % natural constants
         c   = 299792458;              % [m/s]
@@ -13,8 +14,8 @@ classdef simulation < handle
         absorb     % [1] grating absorption (values between: 0-1)
         duty       % [1] duty cycle
         E          % [keV]
-        gAngle     % [°] angle of grating's bump slopes
-        gHeight    % [m] height of gratings bump
+        gAngle     % [°] angle of grating's pillar slopes
+        gHeight    % [m] height of grating's pillars
         N          % [1] number of particles --> 2^n !!!
         padding    % [1] total number (with zero-padding)
         periods    % [1] grating-size (in terms of periods)
@@ -23,6 +24,12 @@ classdef simulation < handle
         r          % [m] radius of incidient wave curvature
         srcsz      % [m] source size of beam for simulation
         rr         % [m] radius of incident wave curvature used for ML fit
+        s          % [1] stretching factor
+        % from analysis-class
+        nameDest    % destination directory (full path)
+        psize       % [m] px size of detector
+        usewin      % switch whether to use window function
+        z           % propagation distances
     end
     properties
         % calculated values from parameters
@@ -39,6 +46,10 @@ classdef simulation < handle
         x1         % [px] px-value for plotting-ROI
         x2         % [px] px-value for plotting-ROI
         y0         % [m] grating coordinates (zero-padded)
+        % from analysis-class
+        per         % [px] number of px per period
+        per_approx  % [px] approx. period due to beam divergence
+        M           % magnification due to beam divergence
     end
 %--------------------------------------------------------------------------
 % Methods
@@ -72,16 +83,29 @@ methods
         obj.x1 = middle - round( (value/2).*obj.pxperiod ) + 1;
         obj.x2 = middle + round( (value/2).*obj.pxperiod );
     end
-    function set.gHeight(obj,value)
+    function calcRefracAbsorb(obj,density)
         % when setting "gHeight" set correct phase-shift introduced by
         % grating and absorption level. here we make use of external
         % "xray-interaction-constants" library provided by Zhang Jiang
-        obj.gHeight = value;
-        result=refrac('Au',obj.E,17);
+        %obj.gHeight = value;
+        result=refrac('Au',obj.E,density);
         delta = result.dispersion;
         bet   = result.absorption;
         obj.phShift = obj.k*delta*obj.gHeight;
         obj.absorb  = (-bet.*obj.k.*obj.gHeight);
+    end
+    function set.nameDest(obj,value)
+        % set destination directory and mkdir
+        mkdir(value);
+        obj.nameDest = value;
+    end
+    function set.z(obj,value)
+        % method that is called when propagation distances are set.
+        % magnification M as well as the period in [px] is calculated
+        obj.z   = value;
+        obj.M   = ( obj.r + obj.z ) ./ obj.r;
+        obj.per = obj.a/obj.psize;
+        obj.per_approx = obj.per.*obj.M;
     end
     function G = talbotGrid1D (obj)
         % construction of 1D grid from all parameters. if "gAngle" is
@@ -182,6 +206,12 @@ methods
             obj.rr = obj.r;
         end
         
+        % Check whether "phase shift" and "absorption" level are set. Run
+        % e.g. obj.calcRefracAbsorb(17) before obj.waveFieldGrat.
+        if isempty(obj.phShift) | isempty(obj.absorb)
+            error('obj.phShift and obj.absorb must be set before running obj.waveFieldGrat(G)!');
+        end 
+        
         % Grating Operators
         ds = sqrt(obj.rr.^2+XX.^2+YY.^2)-obj.rr;   % beam diverg. phase shift
         U  = exp(i.*obj.k.*(ds + obj.rr));         % (1) impinging spherical wave
@@ -265,6 +295,37 @@ methods
         Uf  = fftshift(fft2(ifftshift(U)));           % FFT of intensity
         U   = abs(fftshift(ifft2(ifftshift(Uf.*gam))));
     end
+    function F = calcFcoeff(obj)
+        % calculates 1st Fourier coefficients in 1D from all properties
+        % that are available (see above)
+        if isempty(obj.rr)
+            error('obj.rr is not set')
+        end
+        % GRID creation & Wave field @ Grid
+        obj.calcRefracAbsorb(17);
+        gra = obj.talbotGrid1D;
+        f = obj.waveFieldGrat(gra);
+        
+        % Propagation along z-axis
+        obj.plotper = 14;      % number of periods to be plotted --> sets obj.x1, obj.x2
+        resolu    = 512;     % desired resolution
+
+        for ii=1:length(obj.z)
+            lineTalbot = obj.waveFieldPropMutual(obj.z(ii),f); % Fresnel-pro + mutual coh.fnct
+            crop = lineTalbot(obj.x1:obj.x2);                % crop to <plotper> periods
+            crop = interp1(crop,linspace(1,length(crop),resolu));
+            pwav(:,ii) = crop;
+        end
+        
+        % Visibility calculation
+        %M   = ( obj.r + z) ./ obj.r;
+        per = obj.M .* size(pwav,1)/obj.plotper;        % period in [px]
+
+        for jj=1:length(obj.z)
+            vec = pwav(:,jj);
+            F(jj,1) = obj.vis1D (vec,per(jj));
+        end 
+    end
     function U = scale2Det (obj, U0, psize)
         % scales Talbot-carpet to the pixel size (psize) of the detector.
         % if the images are not cropped, then obj.plotper is set with
@@ -293,54 +354,7 @@ methods
         M = (obj.r + z)./obj.r;
         k = (1./(obj.pxperiod.*M)).*length(obj.x1:obj.x2);
     end
-    function [del bet]   = IndexRef (obj,file,meth)
-        % fits NIST data for delta and beta to the given energy
-        file    = sprintf('%s.dat',file);
-        Evec    = obj.E;
-        newdata = importdata(file);
-        Enist   = newdata(:,1)./1000;  % [keV]
-        delta   = newdata(:,2);
-        beta    = newdata(:,3);
-        meth   = lower(meth);
-        [M,m,n]=unique(Enist);
-        dupind = setdiff([1:size(Enist)],m); % position of edges
-        if isempty(dupind) == 1
-            vec1 = interp1(log(Enist),log(delta),log(Evec), ...
-                    meth,'extrap');
-            vec2 = interp1(log(Enist),log(beta),log(Evec), ...
-                    meth,'extrap');
-            l=length(Evec)+1;
-            del = exp(vec1);
-            bet = exp(vec2);
-        else
-            dE = 1e-12;
-            Enist(dupind) = Enist(dupind)-dE;
-            l=1;
-            ll=1;
-            del=[];
-            bet=[];
-            dupind= [dupind length(Enist)];
-            for i=1:length(dupind)
-                tmpE = Evec(Evec <= Enist(dupind(i)));
-                tmpE = tmpE(l:end);
-                vec1  = interp1(log(Enist(ll:(dupind(i)))), ...
-                       log(delta(ll:(dupind(i)))),log(tmpE), meth,'extrap');
-                vec2  = interp1(log(Enist(ll:(dupind(i)))), ...
-                       log(beta(ll:(dupind(i)))),log(tmpE), meth,'extrap');
-                del = [del exp(vec)];
-                bet = [bet exp(vec)];
-                l  = length(attnew)+1;
-                ll = dupind(i)+1;
-            end
-        end
-%         figure;
-%         plot(log(Enist),log(delta));
-%         hold on;
-%         plot(log(Evec),log(del),'ro')
-%         hold off;
-        %flux   = F .* exp(-attnew.*thick.*rho); % multiplication with exp
-    end
-    function f = weightedLSQ (obj,simu,expo)
+    function f = modifiedLSE (obj,simu,expo)
         % conducts the normalized weighted LSQ-error and returns the value
         f = ( (simu./mean(simu) - expo./mean(expo)).^2 ).*expo./mean(expo) ;
         f = sum(f);
@@ -353,6 +367,61 @@ methods
     function y = LSQ(obj,a,b)
         % calculates LSQ normalized with mean value (non-used!!)
         y = sum( (a./mean(a) - b./mean(b)).^2 );
+    end
+    function img     = loadSmallImg (obj,ind)
+        % loads "small images" created with Save2img and throws failure if
+        % folder is empty. img-s are assumed to be 16bit.
+        % ind is the index of the img in the folder (not the name!)
+        % TODO: probably obsolete
+        files = dir([obj.nameDest '/*.tif']);
+        if size(files,1) == 0
+            error('No files loaded. Create small imgs first with Save2img')
+        end
+        file  = sprintf('%s/%s',obj.nameDest, files(ind).name)
+        img   = double(imread(file,'tif'));
+        img   = img./(2^16-1);
+    end
+	function Save2img (obj,img,n)
+        % saves img to <obj.nameDest> under <000n.tif> at 16bit tif images
+        zspace = '0000';
+        zer=zspace(1:end-length(num2str(n)));
+        file=sprintf('%s/%s%d.tif',obj.nameDest,zer,n)
+        img = uint16((2^16-1).*(img));       % save as 16bit
+        imwrite(img,file,'tif');
+    end
+    function [Fh Fv] = visCalc (obj,img,n)
+        % TODO: - remove "set" dependency
+        %       - change order of V and H (to be consistent with others)
+        if ~exist('set','var')
+            set = 1;        % will be obsolete...
+        end
+        % analyses visibility of <img> in vertical and horizontal direction
+        per = obj.per_approx(set,n);  % approximated period in [px]
+        mittel=mean(mean(img));
+
+        % --- vertical
+        meanv = mean(img,2);          % visibility in vertical   direction
+        Fv = obj.vis1D(meanv,per)./mittel;
+
+        % --- horizontal
+        meanh = mean(img,1);          % visibility in horizontal direction
+        Fh = obj.vis1D(meanh,per)./mittel;
+    end
+    function f = vis1D (obj,vec,per)
+        % visibility calculation by identifying 1st Fourier component and
+        % giving it's value.
+        % TODO: include magnification (like in paper)
+        dim = fn_leak1(vec,per);            % find correct window
+        vec = vec(1:dim);                   % set
+        if obj.usewin == 1
+            vec=vec(:).*tukeywin(dim,0.75);
+        end
+        four = abs(fft(vec));
+        first = round(length(vec)/per);     % expected position of 1st coef
+        four_crp = four(2:round(dim/2));
+        first = first-1;                    % because cropping
+        [peak pos] = max(four_crp((first-6):(first+6)));
+        f = peak/four(1);
     end
 	function plotWaveAtGrating(obj,f,gra)
         % plot grating <gra> and grating-wave-front <f> with absorption and
@@ -389,4 +458,25 @@ methods
         legend('D_R','D_T','D_R (defocussed)','D_T (defocussed)');
     end
 end
+end
+%--------------------------------------------------------------------------
+% Functions
+%--------------------------------------------------------------------------
+function n = fn_leak1(x,p)
+% leakage function by R. Mokso
+% x is the array, p is the approximate period
+
+for k=1:1:round(p)
+    t=x(1:end-k+1);
+    ft=fft(t);
+    aft=abs(ft);
+    naft=aft/(length(t));
+    pos=round(length(t)/p);
+    [peak,peakpos]=max(naft(pos-2:pos+2));
+    peakpos=pos-2+peakpos-1;
+    f1(k)=peak;
+end
+
+[peak,peakpos]=max(f1);
+n=length(x)-peakpos+1;
 end

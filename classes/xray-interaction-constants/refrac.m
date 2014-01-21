@@ -72,11 +72,7 @@ function xresult = refrac(varargin)
 %    Copyright 2004 Zhang Jiang
 %    Original verions: 2004/10/10 18:52:19
 %
-%    Initially modified by: Goran Lovric (02.08.2013)
-%    Recent changes:
-%    $Rev: 4 $
-%    $Date: 2013-08-22 15:57:10 +0200 (Thu, 22 Aug 2013) $
-%    $Author: lovric_g $
+%    Modified by: Goran Lovric (02.08.2013)
 
 if nargin ~= 3 & nargin ~= 4
     error('Incorrect inputment.');
