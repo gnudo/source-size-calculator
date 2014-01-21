@@ -1,7 +1,6 @@
 % Performs the fitting algorithm on "experimental" data, being located in
 % "b.nameDest" folder. To apply on arbitrary experimental data, adjust
 % section 1.) with correct parameters
-% TODO: - move object creation and class properties settings to fitfunc
 %--------------------------------------------------------------------------
 % Date: 2013-12-20
 % Author: Goran Lovric
@@ -45,18 +44,17 @@ k_max  = 7;                       % number of iteration steps
 %--------------------------------------------------------------------------
 for jj=1:length(a.z)
 	img     = a.loadSmallImg(jj); % load experimental Talbot imgs
-    [Fv Fh] = a.visCalc(img,jj);  % extract first Fourier coefficients
-    Fvv(jj) = Fv;
-    Fhh(jj) = Fh;
+    [F_Hi F_Vi] = a.visCalc(img,jj);  % extract first Fourier coefficients
+    F_exp(jj,1) = F_Hi;
+    F_exp(jj,2) = F_Vi;
 end
-fourCoeffexp = [Fhh.' Fvv.'];
 
 %--------------------------------------------------------------------------
 % 3.) Run fitting algorithm with the above parameters (or load results)
 %--------------------------------------------------------------------------
 if ~exist('results.mat', 'file')
-    fitpar = fitfunc(a,fourCoeffexp,dutUP,dutDN,angUP,angDN,src_UP, ...
-                     src_DN,ene_UP,ene_DN,k_max,n_max,s,a.z, 'results');
+    fitpar = fitfunc('results', a,F_exp,dutUP,dutDN,angUP,angDN, ...
+                     src_UP,src_DN,ene_UP,ene_DN,k_max,n_max,s);
 end
 load('results.mat')
 
@@ -81,14 +79,14 @@ disp(['Ver. angle = ' num2str(m_angV(end))]);
 fig1 = figure;
     set(fig1,'Position',[80 680 800 248]);
 subplot(1,2,1)
-    plot(a.z,Fhh./mean(Fhh),'o')
+    plot(a.z,F_exp(:,1)./mean(F_exp(:,1)),'o')
     hold on;
     plot(a.z,horzsim(:,end)./mean(horzsim(:,end)),'k')
     hold off;
     xlim([0 a.z(end)]);
     legend('experimental values','best fit')
 subplot(1,2,2)
-    plot(a.z,Fvv./mean(Fvv),'ro')
+    plot(a.z,F_exp(:,2)./mean(F_exp(:,2)),'ro')
     hold on;
     plot(a.z,vertsim(:,end)./mean(vertsim(:,end)),'k')
     hold off;

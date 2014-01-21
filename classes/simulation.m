@@ -29,7 +29,7 @@ classdef simulation < handle
         nameDest    % destination directory (full path)
         psize       % [m] px size of detector
         usewin      % switch whether to use window function
-        z           % propagation distances (lines --> different data sets)
+        z           % propagation distances
     end
     properties
         % calculated values from parameters
@@ -46,8 +46,6 @@ classdef simulation < handle
         x1         % [px] px-value for plotting-ROI
         x2         % [px] px-value for plotting-ROI
         y0         % [m] grating coordinates (zero-padded)
-        dutDN_lim
-        dutUP_lim
         % from analysis-class
         per         % [px] number of px per period
         per_approx  % [px] approx. period due to beam divergence
@@ -208,9 +206,9 @@ methods
             obj.rr = obj.r;
         end
         
-        % Check whether "phase shift" and "absorption" level are set
+        % Check whether "phase shift" and "absorption" level are set. Run
+        % e.g. obj.calcRefracAbsorb(17) before obj.waveFieldGrat.
         if isempty(obj.phShift) | isempty(obj.absorb)
-            %obj.calcRefracAbsorb(17);
             error('obj.phShift and obj.absorb must be set before running obj.waveFieldGrat(G)!');
         end 
         
@@ -297,6 +295,37 @@ methods
         Uf  = fftshift(fft2(ifftshift(U)));           % FFT of intensity
         U   = abs(fftshift(ifft2(ifftshift(Uf.*gam))));
     end
+    function F = calcFcoeff(obj)
+        % calculates 1st Fourier coefficients in 1D from all properties
+        % that are available (see above)
+        if isempty(obj.rr)
+            error('obj.rr is not set')
+        end
+        % GRID creation & Wave field @ Grid
+        obj.calcRefracAbsorb(17);
+        gra = obj.talbotGrid1D;
+        f = obj.waveFieldGrat(gra);
+        
+        % Propagation along z-axis
+        obj.plotper = 14;      % number of periods to be plotted --> sets obj.x1, obj.x2
+        resolu    = 512;     % desired resolution
+
+        for ii=1:length(obj.z)
+            lineTalbot = obj.waveFieldPropMutual(obj.z(ii),f); % Fresnel-pro + mutual coh.fnct
+            crop = lineTalbot(obj.x1:obj.x2);                % crop to <plotper> periods
+            crop = interp1(crop,linspace(1,length(crop),resolu));
+            pwav(:,ii) = crop;
+        end
+        
+        % Visibility calculation
+        %M   = ( obj.r + z) ./ obj.r;
+        per = obj.M .* size(pwav,1)/obj.plotper;        % period in [px]
+
+        for jj=1:length(obj.z)
+            vec = pwav(:,jj);
+            F(jj,1) = obj.vis1D (vec,per(jj));
+        end 
+    end
     function U = scale2Det (obj, U0, psize)
         % scales Talbot-carpet to the pixel size (psize) of the detector.
         % if the images are not cropped, then obj.plotper is set with
@@ -325,7 +354,7 @@ methods
         M = (obj.r + z)./obj.r;
         k = (1./(obj.pxperiod.*M)).*length(obj.x1:obj.x2);
     end
-    function f = weightedLSQ (obj,simu,expo)
+    function f = modifiedLSE (obj,simu,expo)
         % conducts the normalized weighted LSQ-error and returns the value
         f = ( (simu./mean(simu) - expo./mean(expo)).^2 ).*expo./mean(expo) ;
         f = sum(f);
@@ -360,7 +389,7 @@ methods
         img = uint16((2^16-1).*(img));       % save as 16bit
         imwrite(img,file,'tif');
     end
-    function [Fv Fh] = visCalc (obj,img,n)
+    function [Fh Fv] = visCalc (obj,img,n)
         % TODO: - remove "set" dependency
         %       - change order of V and H (to be consistent with others)
         if ~exist('set','var')
@@ -429,4 +458,25 @@ methods
         legend('D_R','D_T','D_R (defocussed)','D_T (defocussed)');
     end
 end
+end
+%--------------------------------------------------------------------------
+% Functions
+%--------------------------------------------------------------------------
+function n = fn_leak1(x,p)
+% leakage function by R. Mokso
+% x is the array, p is the approximate period
+
+for k=1:1:round(p)
+    t=x(1:end-k+1);
+    ft=fft(t);
+    aft=abs(ft);
+    naft=aft/(length(t));
+    pos=round(length(t)/p);
+    [peak,peakpos]=max(naft(pos-2:pos+2));
+    peakpos=pos-2+peakpos-1;
+    f1(k)=peak;
+end
+
+[peak,peakpos]=max(f1);
+n=length(x)-peakpos+1;
 end

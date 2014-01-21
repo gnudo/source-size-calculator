@@ -1,16 +1,13 @@
 % function containing the actual fit algorithm
 % TODO: - clean code
 %       - unify nomenclature
-%       - rebase
-%       - use generic simulation+FourierCalc script (to be created)
-function fitpar = fitfunc(a,fourCoeffexp,dutUP,dutDN,angUP,angDN,src_UP,src_DN,ene_UP,ene_DN,k_max,n_max,s,z,name)
+function fitpar = fitfunc(name,a,F_exp,dutUP,dutDN,angUP,angDN,src_UP,src_DN,ene_UP,ene_DN,k_max,n_max,s)
 % number of iterations
-N_max = 2 * n_max^4 * k_max * length(z)     % Eq. (18) from paper
+N_max = 2 * n_max^4 * k_max * length(a.z)     % Eq. (18) from paper
 COUNTER_NUM = n_max^4 *k_max
 
 a.plotper = 14;      % number of periods to be plotted --> sets a.x1, a.x2
-resolu    = 512;     % desired resolution
-M   = ( a.r + z) ./ a.r;
+a.rr = a.r;
 
 counter = 0;
 countH = 0;
@@ -26,10 +23,11 @@ src_H = interval(src_DN,src_UP);
 src_V = interval(src_DN,src_UP);
 E     = interval(ene_DN,ene_UP);
 
-lsHorz_tmp = 1e11;
-lsVert_tmp = 1e11;
+p_start_H = 1e11;
+p_start_V = 1e11;
 
 for k=1:k_max
+% Nest intervals for each parameter "object"
 dutiesH = dc_H.nestIntervals(n_max,s);
 dutiesV = dc_V.nestIntervals(n_max,s);
 anglesH = ang_H.nestIntervals(n_max,s);
@@ -42,59 +40,48 @@ for n_E=1:n_max
  a.E = ene(n_E);
  a.calcRefracAbsorb(17); % calculate delta & beta for grating with rho = 17
 for n_sigma=1:n_max
-  srcsz = [srcH(n_sigma) srcV(n_sigma)];
+  sigma = [srcH(n_sigma) srcV(n_sigma)];
   for n_alpha=1:n_max
     angles = [anglesH(n_alpha) anglesV(n_alpha)];
 	for n_dc=1:n_max
-      duties = [dutiesH(n_dc) dutiesV(n_dc)];
+      dc = [dutiesH(n_dc) dutiesV(n_dc)];
       counter = counter+1
-      %--------------------------------------------------------------------
-      for kk=1:2
-        a.gAngle  = angles(kk);
-        a.srcsz   = srcsz(kk);                 % TOMCAT horizontal src size
-        a.duty    = duties(kk);
-        
-        gra = a.talbotGrid1D;
-        f = a.waveFieldGrat(gra);
-        for ii=1:length(z)
-          calc = a.waveFieldPropMutual(z(ii),f);
-          crop = calc(a.x1:a.x2);
-          crop = interp1(crop,linspace(1,length(crop),resolu));
-          pwav(:,ii) = crop;
-          % --- visibility calcs
-          per = M .* size(pwav,1)/a.plotper;        % period in [px]
-          vec = pwav(:,ii);
-          fourCoeff(ii,kk) = a.vis1D (vec,per(ii));
-        end
+      
+      % Loop through horizontal and vertical Fourier coefficients
+      for ii = 1:2
+          a.srcsz   = sigma(ii);
+          a.duty    = dc(ii);
+          a.gAngle  = angles(ii);
+          F_sim(:,ii) = a.calcFcoeff;
       end
-
+      
       % Least-Square-Fit
-      lsHorz = a.weightedLSQ(fourCoeff(:,1),fourCoeffexp(:,1));
-      lsVert = a.weightedLSQ(fourCoeff(:,2),fourCoeffexp(:,2));
-      fitpar(counter,:) = [lsHorz lsVert];
+      p_H = a.modifiedLSE(F_sim(:,1),F_exp(:,1));
+      p_V = a.modifiedLSE(F_sim(:,2),F_exp(:,2));
+      fitpar(counter,:) = [p_H p_V];
 
-      sumVH = lsHorz_tmp + lsVert_tmp;
-      if lsHorz < lsHorz_tmp
-        lsHorz_tmp = lsHorz;
+      p_start_HV = p_start_H + p_start_V;
+      if p_H < p_start_H
+        p_start_H = p_H;
         countH = countH+1;
-        fitH(countH) = lsHorz_tmp;
-        dc_H.setNewMinMax(duties(1));
+        fitH(countH) = p_start_H;
+        dc_H.setNewMinMax(dc(1));
         ang_H.setNewMinMax(angles(1));
-        src_H.setNewMinMax(srcsz(1));
-        horzsim(:,countH) = fourCoeff(:,1);
+        src_H.setNewMinMax(sigma(1));
+        horzsim(:,countH) = F_sim(:,1);
         eneH(countH) = a.E;
       end % --> IF
-      if lsVert < lsVert_tmp
-        lsVert_tmp = lsVert;
+      if p_V < p_start_V
+        p_start_V = p_V;
         countV = countV+1;
-        fitV(countV) = lsVert_tmp;
-        dc_V.setNewMinMax(duties(2));
+        fitV(countV) = p_start_V;
+        dc_V.setNewMinMax(dc(2));
         ang_V.setNewMinMax(angles(2));
-        src_V.setNewMinMax(srcsz(2));
-        vertsim(:,countV) = fourCoeff(:,2);
+        src_V.setNewMinMax(sigma(2));
+        vertsim(:,countV) = F_sim(:,2);
         eneV(countV) = a.E;
       end % --> IF 
-      if (lsHorz+lsVert) < sumVH
+      if (p_H+p_V) < p_start_HV
         countVH = countVH+1;
         m_ene(countVH) = a.E;
         E.setNewMinMax(a.E);
@@ -103,7 +90,7 @@ for n_sigma=1:n_max
   end % --> n_alpha
 end % --> n_sigma
 end % --> n_E
-end % --> iter
+end % --> k
 
 m_dutH = (dc_H.DN +dc_H.UP)/2; %(dutHDN + dutHUP) / 2;
 m_angH = (ang_H.DN + ang_H.UP)/2; %(angHDN + angHUP) / 2;
@@ -119,6 +106,7 @@ d_angV = ang_V.del;%d_anglesV;
 d_srH = src_H.del;%d_srcH;
 d_srV = src_V.del;%d_srcV;
 d_ene = E.del;
+z = a.z;
 %--------------------------------------------------------------------------
 % 3.) Save to file
 %--------------------------------------------------------------------------

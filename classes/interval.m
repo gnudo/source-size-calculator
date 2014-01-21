@@ -22,9 +22,9 @@ classdef interval < handle
     end
 	function n_i = nestIntervals(obj,n_max,s)
         % nests n_max intervals with streching factor s (see first
-        % subroutine "Nest intervals" from Fig. 3. for k>1, checklimits()
-        % is run to make sure that the results stay within the given
-        % margins
+        % subroutine "Nest intervals" from Fig. 3.
+        % For k>1, checklimits() is run to make sure that the results stay
+        % within the given (absolute) margins
         if ~isempty(obj.del)
             obj.checklimits()
         end
