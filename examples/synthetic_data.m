@@ -3,6 +3,7 @@
 %--------------------------------------------------------------------------
 % Date: 2013-12-20
 % Author: Goran Lovric
+% License: GPL 3 (see LICENSE file in root folder)
 %--------------------------------------------------------------------------
 close all;clc;clear;
 addpath('../classes');

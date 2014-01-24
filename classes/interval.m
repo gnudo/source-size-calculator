@@ -40,7 +40,7 @@ classdef interval < handle
         obj.min = val-obj.del;
         obj.max = val+obj.del;
     end
-    function checklimits(obj,s)
+    function checklimits(obj)
         % if the lower or upper margins are exceeding the absolute margin,
         % then the parted interval is shifted towards the middle
         if obj.min < obj.min_lim
