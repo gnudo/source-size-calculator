@@ -25,15 +25,16 @@ a.usewin   = 1;                   % apply Tukey/Hanning window function
 a.gHeight  = 3.39e-6;             % [m] height of grating structure %!!!!!!!!!!!!!!!!!!!!
 a.periods  = 32;                  % grating-size (in terms of periods)
 a.N        = 2^13;                % number of particles (pixels)
+a.plotper  = 14;      % number of periods to be plotted --> sets a.x1, a.x2
 
-dutDN  = 0.5;                     % [1] duty cycle lower limit
-dutUP  = 0.54;                    % [1] duty cycle upper limit
-angDN  = 0;                       % [°] grating angle lower limit
-angUP  = 4;                       % [°] grating angle upper limit
-src_DN = 0e-6;                    % [m] source size lower limit
-src_UP = 200e-6;                  % [m] source size upper limit
-ene_DN = 14-0.5;                  % [keV] x-ray energy lower limit
-ene_UP = 14+0.5;                  % [keV] x-ray energy upper limit
+dc_min  = 0.5;                    % [1] duty cycle lower limit
+dc_max  = 0.54;                   % [1] duty cycle upper limit
+alpha_min  = 0;                   % [°] grating angle lower limit
+alpha_max  = 4;                   % [°] grating angle upper limit
+sigma_min = 0e-6;                 % [m] source size lower limit
+sigma_max = 200e-6;               % [m] source size upper limit
+E_min = 14-0.5;                   % [keV] x-ray energy lower limit
+E_max = 14+0.5;                   % [keV] x-ray energy upper limit
 s      = 1.5;                     % interval stretching factor (from paper)
 
 n_max  = 3;                       % number of intervals to be nested
@@ -53,27 +54,47 @@ end
 % 3.) Run fitting algorithm with the above parameters (or load results)
 %--------------------------------------------------------------------------
 if ~exist('results.mat', 'file')
-    fitpar = fitfunc('results', a,F_exp,dutUP,dutDN,angUP,angDN, ...
-                     src_UP,src_DN,ene_UP,ene_DN,k_max,n_max,s);
+    fitfunc('results', a,F_exp,dc_min,dc_max,alpha_min, ...
+                  alpha_max,sigma_min,sigma_max,E_min,E_max,k_max,n_max,s);
 end
 load('results.mat')
 
 %--------------------------------------------------------------------------
-% 4.) Print and plot the results
+% 4.) Simulate F-coefficients from the loaded parameters
+%--------------------------------------------------------------------------
+a.srcsz   = src_H.val;
+a.duty    = duty_H.val;
+a.gAngle  = ang_H.val;
+a.E       = ene.val;
+F_simH = a.calcFcoeff;
+
+a.srcsz   = src_V.val;
+a.duty    = duty_V.val;
+a.gAngle  = ang_V.val;
+a.E       = ene.val;
+F_simV = a.calcFcoeff;
+
+%--------------------------------------------------------------------------
+% 5.) Print and plot the results
 %--------------------------------------------------------------------------
 
 % Source sizes
 clc;
-disp(['Hor. source size = ' num2str(m_srH(end)*1e6) ' micrometer']);
-disp(['Ver. source size = ' num2str(m_srV(end)*1e6) ' micrometer']);
+disp(['Hor. source size = (' num2str(round(src_H.val*1e6)), ...
+    ' +- ' num2str(round(src_H.del*1e6)) ') micrometer']);
+disp(['Ver. source size = (' num2str(round(src_V.val*1e6)), ...
+    ' +- ' num2str(round(src_V.del*1e6)) ') micrometer']);
 fprintf('\n');
 % Duty cycles
-disp(['Hor. duty cycle = ' num2str(m_dutH(end))]);
-disp(['Ver. duty cycle = ' num2str(m_dutV(end))]);
+disp(['Hor. duty cycle = ' num2str(duty_H.val)]);
+disp(['Ver. duty cycle = ' num2str(duty_V.val)]);
 fprintf('\n');
 % Angle
-disp(['Hor. angle = ' num2str(m_angH(end))]);
-disp(['Ver. angle = ' num2str(m_angV(end))]);
+disp(['Hor. angle = ' num2str(ang_H.val)]);
+disp(['Ver. angle = ' num2str(ang_V.val)]);
+fprintf('\n');
+% Energy
+disp(['X-ray energy = ' num2str(ene.val) ' +- ' num2str(ene.del) ' keV']);
 
 % Plot Fourier coefficients
 fig1 = figure;
@@ -81,14 +102,14 @@ fig1 = figure;
 subplot(1,2,1)
     plot(a.z,F_exp(:,1)./mean(F_exp(:,1)),'o')
     hold on;
-    plot(a.z,horzsim(:,end)./mean(horzsim(:,end)),'k')
+    plot(a.z,F_simH./mean(F_simH),'k')
     hold off;
     xlim([0 a.z(end)]);
     legend('experimental values','best fit')
 subplot(1,2,2)
     plot(a.z,F_exp(:,2)./mean(F_exp(:,2)),'ro')
     hold on;
-    plot(a.z,vertsim(:,end)./mean(vertsim(:,end)),'k')
+    plot(a.z,F_simV./mean(F_simV),'k')
     hold off;
     xlim([0 a.z(end)]);
     legend('experimental values','best fit')

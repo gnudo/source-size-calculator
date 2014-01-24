@@ -24,8 +24,6 @@ classdef simulation < handle
         r          % [m] radius of incidient wave curvature
         srcsz      % [m] source size of beam for simulation
         rr         % [m] radius of incident wave curvature used for ML fit
-        s          % [1] stretching factor
-        % from analysis-class
         nameDest    % destination directory (full path)
         psize       % [m] px size of detector
         usewin      % switch whether to use window function
@@ -46,7 +44,6 @@ classdef simulation < handle
         x1         % [px] px-value for plotting-ROI
         x2         % [px] px-value for plotting-ROI
         y0         % [m] grating coordinates (zero-padded)
-        % from analysis-class
         per         % [px] number of px per period
         per_approx  % [px] approx. period due to beam divergence
         M           % magnification due to beam divergence
@@ -296,11 +293,9 @@ methods
         U   = abs(fftshift(ifft2(ifftshift(Uf.*gam))));
     end
     function F = calcFcoeff(obj)
-        % calculates 1st Fourier coefficients in 1D from all properties
-        % that are available (see above)
-        if isempty(obj.rr)
-            error('obj.rr is not set')
-        end
+        % calculates 1st Fourier coefficients in 1D from all class
+        % properties
+
         % GRID creation & Wave field @ Grid
         obj.calcRefracAbsorb(17);
         gra = obj.talbotGrid1D;
@@ -318,7 +313,6 @@ methods
         end
         
         % Visibility calculation
-        %M   = ( obj.r + z) ./ obj.r;
         per = obj.M .* size(pwav,1)/obj.plotper;        % period in [px]
 
         for jj=1:length(obj.z)
@@ -326,16 +320,16 @@ methods
             F(jj,1) = obj.vis1D (vec,per(jj));
         end 
     end
-    function U = scale2Det (obj, U0, psize)
+    function U = scale2Det (obj, U0)
         % scales Talbot-carpet to the pixel size (psize) of the detector.
         % if the images are not cropped, then obj.plotper is set with
         % obj.periods
         if isempty(obj.plotper)
             obj.plotper = obj.periods;
         end
-        l     = obj.plotper.*obj.a;               % [m] size of FOV
-        res_o = length(obj.x1:obj.x2);            % [1] original resoultion
-        res_n = round(obj.plotper.*obj.a./psize); % [1] new resolution
+        l     = obj.plotper.*obj.a;                  % [m] size of FOV
+        res_o = length(obj.x1:obj.x2);               % [1] orig. resoultion
+        res_n = round(obj.plotper.*obj.a./obj.psize);% [1] new resolution
 
         x_o   = linspace(0,l,res_o);      % original resolution from simu
         x_n   = linspace(0,l,res_n);      % resolution from detector
@@ -354,7 +348,7 @@ methods
         M = (obj.r + z)./obj.r;
         k = (1./(obj.pxperiod.*M)).*length(obj.x1:obj.x2);
     end
-    function f = modifiedLSE (obj,simu,expo)
+    function f = weightedLSE (obj,simu,expo)
         % conducts the normalized weighted LSQ-error and returns the value
         f = ( (simu./mean(simu) - expo./mean(expo)).^2 ).*expo./mean(expo) ;
         f = sum(f);
