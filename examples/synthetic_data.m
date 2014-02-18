@@ -41,8 +41,8 @@ gra = a.talbotGrid2D;
 %--------------------------------------------------------------------------
 % 3.) Wave field @ grating
 %--------------------------------------------------------------------------
-a.calcRefracAbsorb(17); % calculate delta & beta for grating with rho = 17
-f = a.waveFieldGrat(gra);
+a.calcRefracAbsorb(17);  % calculate delta & beta for grating with rho = 17
+f = a.waveFieldGrat(gra);% calculate wavefront after grating
 
 %--------------------------------------------------------------------------
 % 4.) Propagation along z-axis

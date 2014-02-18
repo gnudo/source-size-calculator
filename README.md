@@ -2,13 +2,14 @@
 ======================
 ## Introduction
 
-The following tools provide the source size calculation introduced by G. Lovric _et al._ (submitted to Opt. Exp.). Please be aware that the current version is in **beta state** and not (yet) very user friendly. However we are currently refactoring the code to facilitate simple usage.
+The following scripts include the source size calculation tools introduced by Lovric _et al._ [Opt. Express 22, 2745 (2014), http://doi.org/q9m].
+Feel free to report anz kind of bugs or suggestions: [\[Issues\]](https://github.com/gnudo/source-size-calculator/issues)
 
 ## Structure
 
 - `classes` folder: contains all methods for calculating source sizes
-- `scripts` folder: will contain all higher-level methods (for fitting etc.) that can be called directly with the needed parameters (all files in this folder are currently being rewritten)
-- `examples` folder: contains examples that can be run to see how the tools work (to be populated further)
+- `scripts` folder: contains the implementation for the source size calculation as well for the multilayer characterization
+- `examples` folder: contains examples that can be run to see how the tools work
 
 ## Tutorial
 
@@ -16,11 +17,9 @@ Best way to start using the tool is to run `run_all_tests.m` from `examples` fol
 
 ## Roadmap
 
-There are still some steps left to make the tools fully user-friendly and usable. A tentative list includes:
+There are still some steps left to make the tools fully user-friendly and usable. Following TODO-s will be resolved in the near future:
 
-- consistency in variable names etc. according to paper
 - automatic uncertaintly analysis
 - rebase `scripts` and `examples` folders to reduce redundancies
 - remove unused methods and complete documentation
 - remove *hard-coaded* variables etc.
-- ...

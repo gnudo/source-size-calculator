@@ -1,5 +1,5 @@
 % Implementation of the fitting algorithm according to Fig. 3 from paper
-% Lovric et al., Opt. Express XX, XXX (2014).
+% Lovric et al., Opt. Express 22, 2745 (2014).
 % --> Modification for the characterization of the multilayer
 % characterization:  is constant; curvature is taken as a fit parameter
 %--------------------------------------------------------------------------
@@ -63,30 +63,19 @@ for n_R=1:n_max
         % "Weighted LSE" subroutine
         p_H = a.weightedLSE(F_sim(:,1),F_exp(:,1)); % horizontal F-coeff
         p_V = a.weightedLSE(F_sim(:,2),F_exp(:,2)); % vertical F-coeff
-        iii = 0
-        if p_H < p_start_H
-%             disp('HORZ')
-            iii = iii+1;
+        if p_H <= p_start_H
           p_start_H = p_H;
           duty_H.setNewMinMax(dc(1));
           ang_H.setNewMinMax(alpha(1));
           src_H.setNewMinMax(sigma(1));
           rad_H.setNewMinMax(R(1));
-%           %disp('horz');
-%           rad_H.val;
-%           rad_H.del;
         end % --> IF
-        if p_V < p_start_V
-%             disp('VERT')
-            iii=iii+1;
+        if p_V <= p_start_V
           p_start_V = p_V;
           duty_V.setNewMinMax(dc(2));
           ang_V.setNewMinMax(alpha(2));
           src_V.setNewMinMax(sigma(2));
           rad_V.setNewMinMax(R(2));
-%           disp('vert')
-%           rad_V.val
-%           rad_V.del
         end % --> IF 
       end % --> n_dc
     end % --> n_alpha

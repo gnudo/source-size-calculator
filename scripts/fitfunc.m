@@ -1,5 +1,5 @@
 % Implementation of the fitting algorithm according to Fig. 3 from paper
-% Lovric et al., Opt. Express XX, XXX (2014).
+% Lovric et al., Opt. Express 22, 2745 (2014).
 %--------------------------------------------------------------------------
 % Date: 2014-01-24
 % Author: Goran Lovric

@@ -24,10 +24,10 @@ classdef simulation < handle
         r          % [m] radius of incidient wave curvature
         srcsz      % [m] source size of beam for simulation
         rr         % [m] radius of incident wave curvature used for ML fit
-        nameDest    % destination directory (full path)
-        psize       % [m] px size of detector
-        usewin      % switch whether to use window function
-        z           % propagation distances
+        nameDest   % destination directory (full path)
+        psize      % [m] px size of detector
+        usewin     % switch whether to use window function
+        z          % propagation distances
     end
     properties
         % calculated values from parameters

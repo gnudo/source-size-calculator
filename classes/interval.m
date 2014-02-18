@@ -3,12 +3,12 @@ classdef interval < handle
 % methods for "nesting" new intervals und checking that fit parameters
 % are within the given margins.
     properties
-        min       % lower margin for fitting parameter (is changed upon k++)
-        max       % upper margin for fitting parameter (is changed upon k++)
-        min_lim   % absolute lower limit for fitting parameter
-        max_lim   % absolute upper limit for fitting parameter
-        del       % 2*del is the size of the current parted interval
-        val       % current parameter value with min <= val <= max
+        min      % lower margin for fitting parameter (is changed upon k++)
+        max      % upper margin for fitting parameter (is changed upon k++)
+        min_lim  % absolute lower limit for fitting parameter
+        max_lim  % absolute upper limit for fitting parameter
+        del      % 2*del is the size of the current parted interval
+        val      % current parameter value with min <= val <= max
     end
 %--------------------------------------------------------------------------
 % Methods
@@ -32,6 +32,9 @@ classdef interval < handle
         obj.del  = ( (obj.max-obj.min)/2 ) / n_max * s;
         n_i = linspace(obj.min,obj.max,2*n_max+1);
         n_i = n_i(2:2:end);
+        % set the default value to the center of the interval, in case new
+        % values don't minimize the LSE
+        obj.setNewMinMax(n_i(2));
     end
     function setNewMinMax(obj,val)
         % stores the current parameter "val" and sets new "min" and "max"
@@ -56,4 +59,3 @@ classdef interval < handle
     end
     end
 end
-

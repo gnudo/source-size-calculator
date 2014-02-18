@@ -1,9 +1,10 @@
 % Performs the fitting algorithm on "experimental" data, being located in
-% "b.nameDest" folder. To apply on arbitrary experimental data, adjust
-% section 1.) with correct parameters
+% "a.nameDest" folder. To apply on arbitrary experimental data, adjust
+% section 1.) with correct parameters from your experiment
 %--------------------------------------------------------------------------
 % Date: 2013-12-20
 % Author: Goran Lovric
+% License: GPL 3 (see LICENSE file in root folder)
 %--------------------------------------------------------------------------
 close all;clc;clear;
 addpath('../classes');
@@ -20,7 +21,7 @@ a.psize    = 0.76e-6;             % [m] px size of detector
 a.r        = 25;                  % [m] source-to-grating distance
 a.a        = 6.84e-6;             % [m] grating period
 a.z        = linspace(0,1.1,111); % [m] experimental propagation distances
-a.usewin   = 1;                   % apply Tukey/Hanning window function
+a.usewin   = 0;                   % apply Tukey/Hanning window function
 a.E        = 18;                  % [keV] X-ray energy
 
 a.gHeight  = 3.39e-6;             % [m] height of grating structure %!!!!!!!!!!!!!!!!!!!!
@@ -28,25 +29,25 @@ a.periods  = 32;                  % grating-size (in terms of periods)
 a.N        = 2^13;                % number of particles (pixels)
 a.plotper  = 14;      % number of periods to be plotted --> sets a.x1, a.x2
 
-dc_min  = 0.5;                    % [1] duty cycle lower limit
-dc_max  = 0.54;                   % [1] duty cycle upper limit
+dc_min     = 0.5;                 % [1] duty cycle lower limit
+dc_max     = 0.54;                % [1] duty cycle upper limit
 alpha_min  = 0;                   % [°] grating angle lower limit
 alpha_max  = 4;                   % [°] grating angle upper limit
-sigma_min = 0e-6;                 % [m] source size lower limit
-sigma_max = 200e-6;               % [m] source size upper limit
-R_min = 1;                        % [keV] x-ray energy lower limit
-R_max = 26;                       % [keV] x-ray energy upper limit
-s      = 1.5;                     % interval stretching factor (from paper)
+sigma_min  = 0e-6;                % [m] source size lower limit
+sigma_max  = 200e-6;              % [m] source size upper limit
+R_min      = 1;                   % [m] curvature radius lower limit
+R_max      = 26;                  % [m] curvature radius upper limit
+s          = 1.5;                 % interval stretching factor (from paper)
 
-n_max  = 3;                       % number of intervals to be nested
-k_max  = 3;                      % number of iteration steps
+n_max      = 3;                   % number of intervals to be nested
+k_max      = 7;                   % number of iteration steps
 
 %--------------------------------------------------------------------------
 % 2.) Calculate Fourier coefficients from experimental data
 %--------------------------------------------------------------------------
 for jj=1:length(a.z)
-	img     = a.loadSmallImg(jj); % load experimental Talbot imgs
-    [F_Hi F_Vi] = a.visCalc(img,jj);  % extract first Fourier coefficients
+	img     = a.loadSmallImg(jj);    % load experimental Talbot imgs
+    [F_Hi F_Vi] = a.visCalc(img,jj); % extract first Fourier coefficients
     F_exp(jj,1) = F_Hi;
     F_exp(jj,2) = F_Vi;
 end
@@ -61,7 +62,7 @@ end
 load('results_fitting_ML.mat')
 
 %--------------------------------------------------------------------------
-% 4.) Simulate F-coefficients from the loaded parameters
+% 4.) Simulate F-coefficients from the loaded parameters (for plotting)
 %--------------------------------------------------------------------------
 a.srcsz   = src_H.val;
 a.duty    = duty_H.val;
