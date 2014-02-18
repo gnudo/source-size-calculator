@@ -24,12 +24,10 @@ classdef simulation < handle
         r          % [m] radius of incidient wave curvature
         srcsz      % [m] source size of beam for simulation
         rr         % [m] radius of incident wave curvature used for ML fit
-        s          % [1] stretching factor
-        % from analysis-class
-        nameDest    % destination directory (full path)
-        psize       % [m] px size of detector
-        usewin      % switch whether to use window function
-        z           % propagation distances
+        nameDest   % destination directory (full path)
+        psize      % [m] px size of detector
+        usewin     % switch whether to use window function
+        z          % propagation distances
     end
     properties
         % calculated values from parameters
@@ -46,7 +44,6 @@ classdef simulation < handle
         x1         % [px] px-value for plotting-ROI
         x2         % [px] px-value for plotting-ROI
         y0         % [m] grating coordinates (zero-padded)
-        % from analysis-class
         per         % [px] number of px per period
         per_approx  % [px] approx. period due to beam divergence
         M           % magnification due to beam divergence
@@ -181,10 +178,10 @@ methods
     end
     function U = waveFieldGrat (obj, G)
         % calculates the wavefield of the impinging spherical wave after
-        % passing the grating. (1) we calculate the phase shift along the
-        % grating due to the beam divergence. (2) we consider the
-        % absorption where the grating is. (3) we consider the phase shift
-        % along the grating (induced by the grating)
+        % passing the grating. (1) we consider the phase shift along the
+        % grating (induced by the grating). (2) we consider the absorption
+        % where the grating is. (3) we calculate the phase shift along the
+        % grating due to the beam divergence.
         
         % Coordinate-specific values
         obj.dy0 = obj.periods.*(obj.a/obj.N);
@@ -213,10 +210,10 @@ methods
         end 
         
         % Grating Operators
-        ds = sqrt(obj.rr.^2+XX.^2+YY.^2)-obj.rr;   % beam diverg. phase shift
-        U  = exp(i.*obj.k.*(ds + obj.rr));         % (1) impinging spherical wave
-        U  = U.*((exp(obj.absorb.*G)));            % (2) absorption
-        U  = U.*exp(-i.*obj.phShift.*G);           % (3) phase-shift
+        ds = sqrt(obj.rr.^2+XX.^2+YY.^2);    % beam diverg. phase shift
+        U  = exp(i.*obj.k.*ds);              % (1) impinging spherical wave
+        U  = U.*((exp(obj.absorb.*G)));      % (2) absorption
+        U  = U.*exp(-i.*obj.phShift.*G);     % (3) phase-shift
         if (obj.padding ~= obj.N)
             intermed = zeros(1,obj.padding);
             intermed(1,(obj.N/2+1):(3*obj.N/2)) = U(1,(obj.N/2+1):(3*obj.N/2));
@@ -234,31 +231,20 @@ methods
         C = exp(i.*obj.k.*z)./(2*obj.r);            % const
         C = C/abs(C);                               % normalized amplitude
         U = C .* fftshift(ifft(ifftshift(ff.*H)));  % convolution
-        U = abs(U).^2;
+        U = abs(U).^2;                              % intensity
     end
     function U = waveFieldPropMutual (obj, z, U0)
         % calculates the itensity of a propagated wave field U0 along the
-        % z-axis and taking account of the mutual coherence (given by
-        % finite source size) --> principle from Weitkamp-paper with
-        % Gaussian src
+        % z-axis and taking account of the mutual coherence (finite source
+        % size) --> principle from Weitkamp-paper with Gaussian src
         w    = (z + (z==0)*1e-9) * (obj.srcsz/obj.r); % if z=0, set z=1e-9
         sigm_sq = w^2/(8*log(2));
         srcgauss = exp( -(1/2).* (obj.y0.^2)./ sigm_sq);
         srcgauss = srcgauss./sum(srcgauss);           % normalized Gauss
         
-        % if no wave-field at z=0 is given, it is calculated
-        if isempty(U0)
-            U0 = obj.waveFieldGrat(obj.talbotGrid1D);
-        end
-        
-        ff  = fftshift(fft(ifftshift(U0)));          % FFT of wave field
-        H   = exp( -i.*pi.*obj.lambda.*z.*obj.u.^2); % Fresnel kernel
-        C   = exp(i.*obj.k.*z)./(2*obj.rr);          % const
-        C = C/abs(C);                                % normalized amplitude
-        U   = C .* fftshift(ifft(ifftshift(ff.*H))); % convolution
-        U   = abs(U).^2;                             % intensity
-        gam = fftshift(fft(ifftshift(srcgauss)));    % damping factor
-        Uf  = fftshift(fft(ifftshift(U)));           % FFT of intensity
+        U   = obj.waveFieldProp(z,U0);
+        gam = fftshift(fft(ifftshift(srcgauss)));     % damping factor
+        Uf  = fftshift(fft(ifftshift(U)));            % FFT of intensity
         U   = abs(fftshift(ifft(ifftshift(Uf.*gam))));
     end
     function U = waveFieldPropMutual2D (obj, z, U0)
@@ -288,19 +274,17 @@ methods
         ff  = fftshift(fft2(ifftshift(U0)));         % FFT of wave field
         H   = exp( -i.*pi.*obj.lambda.*z.*(UU.^2+VV.^2)); % Fresnel kernel
         C   = exp(i.*obj.k.*z)./(2*obj.r);           % const
-        C = C/abs(C);                                % normalized amplitude
-        U   = C .* fftshift(ifft2(ifftshift(ff.*H))); % convolution
+        C   = C/abs(C);                              % normalized amplitude
+        U   = C .* fftshift(ifft2(ifftshift(ff.*H)));% convolution
         U   = abs(U).^2;                             % intensity
-        gam = fftshift(fft2(ifftshift(srcgauss)));    % damping factor
-        Uf  = fftshift(fft2(ifftshift(U)));           % FFT of intensity
+        gam = fftshift(fft2(ifftshift(srcgauss)));   % damping factor
+        Uf  = fftshift(fft2(ifftshift(U)));          % FFT of intensity
         U   = abs(fftshift(ifft2(ifftshift(Uf.*gam))));
     end
     function F = calcFcoeff(obj)
-        % calculates 1st Fourier coefficients in 1D from all properties
-        % that are available (see above)
-        if isempty(obj.rr)
-            error('obj.rr is not set')
-        end
+        % calculates 1st Fourier coefficients in 1D from all class
+        % properties
+
         % GRID creation & Wave field @ Grid
         obj.calcRefracAbsorb(17);
         gra = obj.talbotGrid1D;
@@ -318,7 +302,6 @@ methods
         end
         
         % Visibility calculation
-        %M   = ( obj.r + z) ./ obj.r;
         per = obj.M .* size(pwav,1)/obj.plotper;        % period in [px]
 
         for jj=1:length(obj.z)
@@ -326,16 +309,16 @@ methods
             F(jj,1) = obj.vis1D (vec,per(jj));
         end 
     end
-    function U = scale2Det (obj, U0, psize)
+    function U = scale2Det (obj, U0)
         % scales Talbot-carpet to the pixel size (psize) of the detector.
         % if the images are not cropped, then obj.plotper is set with
         % obj.periods
         if isempty(obj.plotper)
             obj.plotper = obj.periods;
         end
-        l     = obj.plotper.*obj.a;               % [m] size of FOV
-        res_o = length(obj.x1:obj.x2);            % [1] original resoultion
-        res_n = round(obj.plotper.*obj.a./psize); % [1] new resolution
+        l     = obj.plotper.*obj.a;                  % [m] size of FOV
+        res_o = length(obj.x1:obj.x2);               % [1] orig. resoultion
+        res_n = round(obj.plotper.*obj.a./obj.psize);% [1] new resolution
 
         x_o   = linspace(0,l,res_o);      % original resolution from simu
         x_n   = linspace(0,l,res_n);      % resolution from detector
@@ -354,7 +337,7 @@ methods
         M = (obj.r + z)./obj.r;
         k = (1./(obj.pxperiod.*M)).*length(obj.x1:obj.x2);
     end
-    function f = modifiedLSE (obj,simu,expo)
+    function f = weightedLSE (obj,simu,expo)
         % conducts the normalized weighted LSQ-error and returns the value
         f = ( (simu./mean(simu) - expo./mean(expo)).^2 ).*expo./mean(expo) ;
         f = sum(f);
