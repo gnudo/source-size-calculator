@@ -22,4 +22,4 @@ There are still some steps left that will follow in the near future:
 - automatic uncertaintly analysis
 - rebase `scripts` and `examples` folders to reduce redundancies
 - remove unused methods and complete documentation
-- remove *hard-coaded* variables etc.
+- remove *hard-coded* variables, etc.
