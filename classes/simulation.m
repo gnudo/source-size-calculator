@@ -309,6 +309,19 @@ methods
             F(jj,1) = obj.vis1D (vec,per(jj));
         end 
     end
+    function [F_H F_V] = calcFcoeff2D(obj,E,sigma,dc,alpha)
+        % calculates 1st Fourier coefficients for all given parameters for
+        % both the horizontal and vertical direction
+        for ii=1:2
+            obj.srcsz  = sigma(ii);
+            obj.duty   = dc(ii);
+            obj.gAngle = alpha(ii);
+            obj.E      = E;
+            F(:,ii)    = obj.calcFcoeff;
+        end
+        F_H = F(:,1);
+        F_V = F(:,2);
+    end
     function U = scale2Det (obj, U0)
         % scales Talbot-carpet to the pixel size (psize) of the detector.
         % if the images are not cropped, then obj.plotper is set with

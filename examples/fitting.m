@@ -51,65 +51,7 @@ for jj=1:length(a.z)
 end
 
 %--------------------------------------------------------------------------
-% 3.) Run fitting algorithm with the above parameters (or load results)
+% 3.) Run fitting algorithm with the above parameters
 %--------------------------------------------------------------------------
-if ~exist('results.mat', 'file')
-    fitfunc('results', a,F_exp,dc_min,dc_max,alpha_min, ...
+fitfunc('results',a,F_exp,dc_min,dc_max,alpha_min, ...
                   alpha_max,sigma_min,sigma_max,E_min,E_max,k_max,n_max,s);
-end
-load('results.mat')
-
-%--------------------------------------------------------------------------
-% 4.) Simulate F-coefficients from the loaded parameters (for plotting)
-%--------------------------------------------------------------------------
-a.srcsz  = src_H.val;
-a.duty   = duty_H.val;
-a.gAngle = ang_H.val;
-a.E      = ene.val;
-F_simH   = a.calcFcoeff;
-
-a.srcsz  = src_V.val;
-a.duty   = duty_V.val;
-a.gAngle = ang_V.val;
-a.E      = ene.val;
-F_simV   = a.calcFcoeff;
-
-%--------------------------------------------------------------------------
-% 5.) Print and plot the results
-%--------------------------------------------------------------------------
-
-% Source sizes
-clc;
-disp(['Hor. source size = (' num2str(round(src_H.val*1e6)), ...
-    ' +- ' num2str(round(src_H.del*1e6)) ') micrometer']);
-disp(['Ver. source size = (' num2str(round(src_V.val*1e6)), ...
-    ' +- ' num2str(round(src_V.del*1e6)) ') micrometer']);
-fprintf('\n');
-% Duty cycles
-disp(['Hor. duty cycle = ' num2str(duty_H.val)]);
-disp(['Ver. duty cycle = ' num2str(duty_V.val)]);
-fprintf('\n');
-% Angle
-disp(['Hor. angle = ' num2str(ang_H.val)]);
-disp(['Ver. angle = ' num2str(ang_V.val)]);
-fprintf('\n');
-% Energy
-disp(['X-ray energy = ' num2str(ene.val) ' +- ' num2str(ene.del) ' keV']);
-
-% Plot Fourier coefficients
-fig1 = figure;
-    set(fig1,'Position',[80 680 800 248]);
-subplot(1,2,1)
-    plot(a.z,F_exp(:,1)./mean(F_exp(:,1)),'o')
-    hold on;
-    plot(a.z,F_simH./mean(F_simH),'k')
-    hold off;
-    xlim([0 a.z(end)]);
-    legend('experimental values','best fit')
-subplot(1,2,2)
-    plot(a.z,F_exp(:,2)./mean(F_exp(:,2)),'ro')
-    hold on;
-    plot(a.z,F_simV./mean(F_simV),'k')
-    hold off;
-    xlim([0 a.z(end)]);
-    legend('experimental values','best fit')
