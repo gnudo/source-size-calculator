@@ -1,2 +1,10 @@
 /.project
-/exp_data
+/README.md~
+/classes/simulation.m~
+/classes/interval.m~
+/examples/fitting.m~
+/examples/synth_kev_simFIT.mat
+/examples/synthetic_data.m~
+/examples/exp_data*
+/examples/results.mat
+/scripts//fitfunc.m~
