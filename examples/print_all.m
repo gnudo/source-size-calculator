@@ -15,7 +15,7 @@ load('results.mat')
                             [duty_H.val duty_V.val],[ang_H.val ang_V.val]);
 
 %--------------------------------------------------------------------------
-% 5.) Print and plot the results
+% 2.) Print and plot the results
 %--------------------------------------------------------------------------
 
 % Source sizes
