@@ -27,9 +27,9 @@ a.N       = 2^12;                 % number of particles (pixels)
 a.psize   = 0.38e-6;              % [m] px size of detector
 
 % Grating parameters
-a.gHeight = 3.39e-6;              % [m] height of grating structure
-a.gAngle  = 1.5;                  % [°] angle of grating's bumps slope
-a.duty    = 0.52;                 % [1] duty cycle
+a.h       = 3.39e-6;              % [m] height of grating structure
+a.alpha   = 1.5;                  % [°] angle of grating's bumps slope
+a.dc      = 0.52;                 % [1] duty cycle
 
 z = linspace(0,1.1,55);           % [m] propagation distances in meters
 

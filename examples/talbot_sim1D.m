@@ -23,9 +23,9 @@ a.padding = 1*a.N;                 % total number (with zero-padding)
 a.psize   = 0.38e-6;               % [m] px size of detector
 
 % Grating parameters
-a.gHeight = 3.39e-6;                % height of grating structure
-a.gAngle  = 4.2;                    % angle of bump's slope
-a.duty    = sqrt(0.285);            % duty cycle
+a.h       = 3.39e-6;                % height of grating structure
+a.alpha   = 4.2;                    % angle of bump's slope
+a.dc      = sqrt(0.285);            % duty cycle
 
 a.z = linspace(0,a.D_def*2,501);  % [m] propagation distance in meters
 

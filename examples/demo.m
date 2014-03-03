@@ -7,23 +7,23 @@
 close all;clc;clear;
 
 %--------------------------------------------------------------------------
-% 1.) create "fake" experimental data (takes ~5min)
+% 0.) create "fake" experimental data (takes ~5min)
 %--------------------------------------------------------------------------
 run synthetic_data
 
 %--------------------------------------------------------------------------
-% 2.) Apply the fitting algorithm from G. Lovric et. al. (submitted)
+% 1.) Apply the fitting algorithm from G. Lovric et. al. (submitted)
 %--------------------------------------------------------------------------
 if ~exist('results.mat', 'file')
     run fitting
 end
 
 %--------------------------------------------------------------------------
-% 3.) Calculate uncertainties
+% 2.) Calculate uncertainties
 %--------------------------------------------------------------------------
 run uncertainty_calc
 
 %--------------------------------------------------------------------------
-% 4.) Print all results
+% 3.) Print all results
 %--------------------------------------------------------------------------
 run print_all

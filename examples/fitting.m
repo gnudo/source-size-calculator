@@ -22,7 +22,7 @@ a.a        = 6.84e-6;             % [m] grating period
 a.z        = linspace(0,1.1,55);  % [m] experimental propagation distances
 a.usewin   = 1;                   % apply Tukey/Hanning window function
 
-a.gHeight  = 3.39e-6;             % [m] height of grating structure
+a.h        = 3.39e-6;             % [m] height of grating structure
 a.periods  = 32;                  % grating-size (in terms of periods)
 a.N        = 2^13;                % number of particles (pixels)
 a.plotper  = 14;      % number of periods to be plotted --> sets a.x1, a.x2

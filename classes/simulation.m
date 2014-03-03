@@ -12,10 +12,10 @@ classdef simulation < handle
         % constants from calling script
         a          % [m] grating period
         absorb     % [1] grating absorption (values between: 0-1)
-        duty       % [1] duty cycle
+        dc         % [1] duty cycle
         E          % [keV]
-        gAngle     % [°] angle of grating's pillar slopes
-        gHeight    % [m] height of grating's pillars
+        alpha      % [°] angle of grating's pillar slopes
+        h          % [m] height of grating's pillars
         N          % [1] number of particles --> 2^n !!!
         padding    % [1] total number (with zero-padding)
         periods    % [1] grating-size (in terms of periods)
@@ -81,15 +81,15 @@ methods
         obj.x2 = middle + round( (value/2).*obj.pxperiod );
     end
     function calcRefracAbsorb(obj,density)
-        % when setting "gHeight" set correct phase-shift introduced by
+        % when setting "h" set correct phase-shift introduced by
         % grating and absorption level. here we make use of external
         % "xray-interaction-constants" library provided by Zhang Jiang
-        %obj.gHeight = value;
+        %obj.h = value;
         result=refrac('Au',obj.E,density);
         delta = result.dispersion;
         bet   = result.absorption;
-        obj.phShift = obj.k*delta*obj.gHeight;
-        obj.absorb  = (-bet.*obj.k.*obj.gHeight);
+        obj.phShift = obj.k*delta*obj.h;
+        obj.absorb  = (-bet.*obj.k.*obj.h);
     end
     function set.nameDest(obj,value)
         % set destination directory and mkdir
@@ -105,22 +105,22 @@ methods
         obj.per_approx = obj.per.*obj.M;
     end
     function G = talbotGrid1D (obj)
-        % construction of 1D grid from all parameters. if "gAngle" is
+        % construction of 1D grid from all parameters. if "alpha" is
         % non-zero, then the grating bumps are assumed to be trapezoidal
         % and the grating is constructed.
         sca    = obj.N./obj.periods;
-        xx     = round(sca.*obj.duty);
+        xx     = round(sca.*obj.dc);
         ha_xx  = round(xx/2);
-        if obj.gAngle ~= 0 | isempty(obj.gAngle) ~= 0
-            angle = obj.gAngle .* (pi./180);
+        if obj.alpha ~= 0 | isempty(obj.alpha) ~= 0
+            angle = obj.alpha .* (pi./180);
             obj.dy0 = obj.periods.*(obj.a/obj.N); % TODO: remove redundancy with (waveFieldGrat)
-            dmax   = ((sca-xx)*obj.dy0/2)/obj.gHeight; % max length of bump's slope
+            dmax   = ((sca-xx)*obj.dy0/2)/obj.h; % max length of bump's slope
             sinval = sin(angle);
             if sinval >= dmax
                 error('angle of grating bumps is too big');
             end
             % length of slopes
-            n1 = round(2*obj.gHeight*sinval/obj.dy0);
+            n1 = round(2*obj.h*sinval/obj.dy0);
             n2 = round(n1/2);
             s1 = linspace(1,0,n2);      % slope 1
             s2 = linspace(0,1,n1-n2);   % slope 2
@@ -314,8 +314,8 @@ methods
         % both the horizontal and vertical direction
         for ii=1:2
             obj.srcsz  = sigma(ii);
-            obj.duty   = dc(ii);
-            obj.gAngle = alpha(ii);
+            obj.dc     = dc(ii);
+            obj.alpha  = alpha(ii);
             obj.E      = E;
             F(:,ii)    = obj.calcFcoeff;
         end
@@ -352,17 +352,8 @@ methods
     end
     function f = weightedLSE (obj,simu,expo)
         % conducts the normalized weighted LSQ-error and returns the value
-        f = ( (simu./mean(simu) - expo./mean(expo)).^2 ).*expo./mean(expo) ;
+        f = ( (simu./mean(simu) - expo./mean(expo)).^2 ).*expo./mean(expo);
         f = sum(f);
-    end
-    function f = weightedLSQ2 (obj,simu,expo)
-        % conducts the weighted LSQ-error and returns the value
-        f = ( (simu - expo).^2 ).*expo;
-        f = sum(f);
-    end
-    function y = LSQ(obj,a,b)
-        % calculates LSQ normalized with mean value (non-used!!)
-        y = sum( (a./mean(a) - b./mean(b)).^2 );
     end
     function img     = loadSmallImg (obj,ind)
         % loads "small images" created with Save2img and throws failure if

@@ -24,7 +24,7 @@ a.z        = linspace(0,1.1,111); % [m] experimental propagation distances
 a.usewin   = 0;                   % apply Tukey/Hanning window function
 a.E        = 18;                  % [keV] X-ray energy
 
-a.gHeight  = 3.39e-6;             % [m] height of grating structure %!!!!!!!!!!!!!!!!!!!!
+a.h        = 3.39e-6;             % [m] height of grating structure %!!!!!!!!!!!!!!!!!!!!
 a.periods  = 32;                  % grating-size (in terms of periods)
 a.N        = 2^13;                % number of particles (pixels)
 a.plotper  = 14;      % number of periods to be plotted --> sets a.x1, a.x2
@@ -65,14 +65,14 @@ load('results_fitting_ML.mat')
 % 4.) Simulate F-coefficients from the loaded parameters (for plotting)
 %--------------------------------------------------------------------------
 a.srcsz   = src_H.val;
-a.duty    = duty_H.val;
-a.gAngle  = ang_H.val;
+a.dc      = duty_H.val;
+a.alpha   = ang_H.val;
 a.rr      = rad_H.val;
 F_simH = a.calcFcoeff;
 
 a.srcsz   = src_V.val;
-a.duty    = duty_V.val;
-a.gAngle  = ang_V.val;
+a.dc      = duty_V.val;
+a.alpha   = ang_V.val;
 a.rr      = rad_V.val;
 F_simV = a.calcFcoeff;
 
