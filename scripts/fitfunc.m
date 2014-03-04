@@ -49,7 +49,7 @@ for n_E=1:n_max
       
         % "Fourier Analysis" subroutine
         for ii = 1:2 % Loop bor both horizontal and vertical directions
-          a.srcsz     = sigma(ii);
+          a.sigma     = sigma(ii);
           a.dc        = dc(ii);
           a.alpha     = alpha(ii);
           F_sim(:,ii) = a.calcFcoeff;

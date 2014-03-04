@@ -9,25 +9,27 @@ classdef simulation < handle
         h_planck = 6.6260689633e-34;       % [Js]
     end
     properties
-        % constants from calling script
+        % variables that are analog to paper variables
         a          % [m] grating period
-        absorb     % [1] grating absorption (values between: 0-1)
         alpha      % [°] angle of grating's pillar slopes
         dc         % [1] duty cycle
         E          % [keV]
         h          % [m] height of grating's pillars
-        N          % [1] number of particles --> 2^n !!!
-        nameDest   % destination directory (full path)
-        padding    % [1] total number (with zero-padding)
-        periods    % [1] grating-size (in terms of periods)
-        phShift    % [1] grating phase shift
-        plotper    % [1] number of periods for plotting
         psize      % [m] px size of detector
         R          % [m] radius of incidient wave curvature
         RR         % [m] radius of incident wave curvature used for ML fit
-        srcsz      % [m] source size of beam for simulation
+        sigma      % [m] source size of beam for simulation
+        z          % [m] array of all propagation distances
+    end
+    properties
+        % variables from numerical implementation
+        absorb     % [1] grating absorption (values between: 0-1)
+        N          % [1] number of particles --> 2^n !!!
+        nameDest   % destination directory (full path)
+        periods    % [1] grating-size (in terms of periods)
+        phShift    % [1] grating phase shift
+        plotper    % [1] number of periods for plotting
         usewin     % switch whether to use window function
-        z          % propagation distances
     end
     properties
         % calculated values from parameters
@@ -71,12 +73,9 @@ methods
         if rem(value,int32(value)) ~= 0
             error('number of period must be an INTEGER');
         end
-        if isempty(obj.padding)
-            obj.padding = obj.N;
-        end
         obj.plotper = value;
         obj.pxperiod=obj.N/obj.periods;   % px per period
-        middle = obj.padding/2;
+        middle = obj.N/2;
         obj.x1 = middle - round( (value/2).*obj.pxperiod ) + 1;
         obj.x2 = middle + round( (value/2).*obj.pxperiod );
     end
@@ -153,16 +152,6 @@ methods
         else
             disp('There was some failure in creating the grating.');
         end
-        
-        % ZEROPADDING grating (only if padding > N)mod
-        if isempty(obj.padding)
-            obj.padding = obj.N; % will become obsolete (substitute with N)
-        end
-        if (obj.padding ~= obj.N)
-            gra0 = zeros(1,obj.padding);
-            gra0(1,(obj.N/2+1):(3*obj.N/2))=G;
-            G=gra0;
-        end
     end
     function G = talbotGrid2D (obj)
         % construction of 2D grid by calling talbotGrid1D and creating
@@ -181,9 +170,9 @@ methods
         
         % Coordinate-specific values
         obj.dy0 = obj.periods.*(obj.a/obj.N);
-        obj.y0  = [-(obj.padding/2):(obj.padding/2-1)].*obj.dy0;
-        obj.du  = 1./ (obj.padding.*obj.dy0);
-        obj.u   = [-(obj.padding/2):(obj.padding/2-1)].*obj.du;
+        obj.y0  = [-(obj.N/2):(obj.N/2-1)].*obj.dy0;
+        obj.du  = 1./ (obj.N.*obj.dy0);
+        obj.u   = [-(obj.N/2):(obj.N/2-1)].*obj.du;
 
         % Check whether grating is 1D or 2D
         if size(G,1) > 1 & size(G,2) > 1
@@ -208,11 +197,6 @@ methods
         % Eq. (11) from paper
         f  = exp( i.*obj.phShift.*G ) .*exp( obj.absorb.*G ) .* ...
                               exp( i.*obj.k.*sqrt(obj.RR.^2+XX.^2+YY.^2) );
-        if (obj.padding ~= obj.N)
-            intermed = zeros(1,obj.padding);
-            intermed(1,(obj.N/2+1):(3*obj.N/2)) = f(1,(obj.N/2+1):(3*obj.N/2));
-            f=intermed;
-        end
     end
     function psi = waveFieldProp (obj, z, f)
         % calculates the itensity of a propagated wave field f along the
@@ -231,7 +215,7 @@ methods
         % calculates the itensity of a propagated wave field f along the
         % z-axis and taking account of the mutual coherence (principle from
         % Weitkamp-paper with Gaussian src). implements Eqs. (9) and (10).
-        w    = (z + (z==0)*1e-9) * (obj.srcsz/obj.R); % if z=0, set z=1e-9
+        w    = (z + (z==0)*1e-9) * (obj.sigma/obj.R); % if z=0, set z=1e-9
         sigm_sq = w^2/(8*log(2));
         srcgauss = exp( -(1/2).* (obj.y0.^2)./ sigm_sq);
         srcgauss = srcgauss./sum(srcgauss);           % normalized Gauss
@@ -247,7 +231,7 @@ methods
         % Weitkamp-paper with Gaussian src) --> all in 2D
         
         % Gaussian of Source sizes in both directions
-        w    = (z + (z==0).*1e-9) * (obj.srcsz/obj.R); % if z=0, set z=1e-9
+        w    = (z + (z==0).*1e-9) * (obj.sigma/obj.R); % if z=0, set z=1e-9
         sigm_sq = w.^2/(8.*log(2));
         
         [XX YY] = meshgrid(obj.y0,obj.y0);
@@ -306,7 +290,7 @@ methods
         % calculates 1st Fourier coefficients for all given parameters for
         % both the horizontal and vertical direction
         for ii=1:2
-            obj.srcsz  = sigma(ii);
+            obj.sigma  = sigma(ii);
             obj.dc     = dc(ii);
             obj.alpha  = alpha(ii);
             obj.E      = E;

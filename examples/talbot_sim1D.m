@@ -15,11 +15,10 @@ a = simulation;               % load classes for calculation
 a.a       = 6.84e-6;               % [m] grating period
 a.R       = 25;%1e11;              % [m] radius of incidient wave curvature
 a.E       = 21;                    % [keV]
-a.srcsz   = 53e-6;                 % TOMCAT horizontal src size
+a.sigma   = 53e-6;                 % TOMCAT vertical src size
 
 a.periods = 8;                     % grating-size (in terms of periods)
 a.N       = 2^13;                  % number of particles --> 2^n !!!
-a.padding = 1*a.N;                 % total number (with zero-padding)
 a.psize   = 0.38e-6;               % [m] px size of detector
 
 % Grating parameters
@@ -65,9 +64,9 @@ sb2 = subplot (1,2,2);
 figure(2)
 imagesc(a.z*1000,[],pwav);
 colormap(gray);
-line(a.D_R.*1e3.*[1 1],[0 a.padding],'Color','r','LineWidth',2);
-line(a.D_T.*1e3.*[1 1],[0 a.padding],'Color','r','LineWidth',2);
-line(a.D_defr.*1e3.*[1 1],[0 a.padding],'Color','b','LineWidth',2);
-line(a.D_def.*1e3.*[1 1],[0 a.padding],'Color','b','LineWidth',2);
+line(a.D_R.*1e3.*[1 1],[0 a.N],'Color','r','LineWidth',2);
+line(a.D_T.*1e3.*[1 1],[0 a.N],'Color','r','LineWidth',2);
+line(a.D_defr.*1e3.*[1 1],[0 a.N],'Color','b','LineWidth',2);
+line(a.D_def.*1e3.*[1 1],[0 a.N],'Color','b','LineWidth',2);
 xlabel('propagation distance [mm]');
 legend('D_R','D_T','D_R (defocussed)','D_T (defocussed)');
