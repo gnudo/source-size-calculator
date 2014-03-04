@@ -87,7 +87,7 @@ methods
         result=refrac('Au',obj.E,density);
         delta = result.dispersion;
         bet   = result.absorption;
-        obj.phShift = obj.k*delta*obj.h;
+        obj.phShift = -obj.k*delta*obj.h;
         obj.absorb  = (-bet.*obj.k.*obj.h);
     end
     function set.nameDest(obj,value)
@@ -175,12 +175,9 @@ methods
             end
         end
     end
-    function U = waveFieldGrat (obj, G)
+    function f = waveFieldGrat (obj, G)
         % calculates the wavefield of the impinging spherical wave after
-        % passing the grating. (1) we consider the phase shift along the
-        % grating (induced by the grating). (2) we consider the absorption
-        % where the grating is. (3) we calculate the phase shift along the
-        % grating due to the beam divergence.
+        % passing the grating.
         
         % Coordinate-specific values
         obj.dy0 = obj.periods.*(obj.a/obj.N);
@@ -208,49 +205,46 @@ methods
             error('obj.phShift and obj.absorb must be set before running obj.waveFieldGrat(G)!');
         end 
         
-        % Grating Operators
-        ds = sqrt(obj.RR.^2+XX.^2+YY.^2);    % beam diverg. phase shift
-        U  = exp(i.*obj.k.*ds);              % (1) impinging spherical wave
-        U  = U.*((exp(obj.absorb.*G)));      % (2) absorption
-        U  = U.*exp(-i.*obj.phShift.*G);     % (3) phase-shift
+        % Eq. (11) from paper
+        f  = exp( i.*obj.phShift.*G ) .*exp( obj.absorb.*G ) .* ...
+                              exp( i.*obj.k.*sqrt(obj.RR.^2+XX.^2+YY.^2) );
         if (obj.padding ~= obj.N)
             intermed = zeros(1,obj.padding);
-            intermed(1,(obj.N/2+1):(3*obj.N/2)) = U(1,(obj.N/2+1):(3*obj.N/2));
-            U=intermed;
+            intermed(1,(obj.N/2+1):(3*obj.N/2)) = f(1,(obj.N/2+1):(3*obj.N/2));
+            f=intermed;
         end
     end
-    function U = waveFieldProp (obj, z, U0)
-        % calculates the itensity of a propagated wave field U0 along the
-        % z-axis
-        if isempty(U0)
-            U0 = obj.waveFieldGrat(obj.talbotGrid1D);
+    function psi = waveFieldProp (obj, z, f)
+        % calculates the itensity of a propagated wave field f along the
+        % z-axis. it is the absolute square root of Eq. (8).
+        if isempty(f)
+            f = obj.waveFieldGrat(obj.talbotGrid1D);
         end
-        ff = fftshift(fft(ifftshift(U0)));          % FFT of wave field
-        H = exp( -i.*pi.*obj.lambda.*z.*obj.u.^2);  % Fresnel kernel
-        C = exp(i.*obj.k.*z)./(2*obj.R);            % const
-        C = C/abs(C);                               % normalized amplitude
-        U = C .* fftshift(ifft(ifftshift(ff.*H)));  % convolution
-        U = abs(U).^2;                              % intensity
+        ff  = fftshift(fft(ifftshift(f)));           % FFT of wave field
+        H   = exp( -i.*pi.*obj.lambda.*z.*obj.u.^2); % Fresnel kernel
+        C   = exp(i.*obj.k.*z)./(2*obj.R);           % const
+        C   = C/abs(C);                              % normalized amplitude
+        psi = C .* fftshift(ifft(ifftshift(ff.*H))); % convolution
+        psi = abs(psi).^2;                           % intensity
     end
-    function U = waveFieldPropMutual (obj, z, U0)
-        % calculates the itensity of a propagated wave field U0 along the
-        % z-axis and taking account of the mutual coherence (finite source
-        % size) --> principle from Weitkamp-paper with Gaussian src
+    function I = waveFieldPropMutual (obj, z, f)
+        % calculates the itensity of a propagated wave field f along the
+        % z-axis and taking account of the mutual coherence (principle from
+        % Weitkamp-paper with Gaussian src). implements Eqs. (9) and (10).
         w    = (z + (z==0)*1e-9) * (obj.srcsz/obj.R); % if z=0, set z=1e-9
         sigm_sq = w^2/(8*log(2));
         srcgauss = exp( -(1/2).* (obj.y0.^2)./ sigm_sq);
         srcgauss = srcgauss./sum(srcgauss);           % normalized Gauss
         
-        U   = obj.waveFieldProp(z,U0);
+        I   = obj.waveFieldProp(z,f);
         gam = fftshift(fft(ifftshift(srcgauss)));     % damping factor
-        Uf  = fftshift(fft(ifftshift(U)));            % FFT of intensity
-        U   = abs(fftshift(ifft(ifftshift(Uf.*gam))));
+        Uf  = fftshift(fft(ifftshift(I)));            % FFT of intensity
+        I   = abs(fftshift(ifft(ifftshift(Uf.*gam))));
     end
-    function U = waveFieldPropMutual2D (obj, z, U0)
-        % calculates the itensity of a propagated wave field U0 along the
-        % z-axis and taking account of the mutual coherence (given by
-        % finite source size) --> principle from Weitkamp-paper with
-        % Gaussian src --> all in 2D
+    function I = waveFieldPropMutual2D (obj, z, f)
+        % calculates the itensity of a propagated wave field f along the
+        % z-axis and taking account of the mutual coherence (principle from
+        % Weitkamp-paper with Gaussian src) --> all in 2D
         
         % Gaussian of Source sizes in both directions
         w    = (z + (z==0).*1e-9) * (obj.srcsz/obj.R); % if z=0, set z=1e-9
@@ -264,21 +258,21 @@ methods
         srcgauss = srcgauss./sum(sum(srcgauss));     % normalized Gauss
         
         % if no wave-field at z=0 is given, it is calculated
-        if isempty(U0)
-            U0 = obj.waveFieldGrat(obj.talbotGrid2D);
+        if isempty(f)
+            f = obj.waveFieldGrat(obj.talbotGrid2D);
         end
 
         [UU VV] = meshgrid(obj.u,obj.u);
         
-        ff  = fftshift(fft2(ifftshift(U0)));         % FFT of wave field
-        H   = exp( -i.*pi.*obj.lambda.*z.*(UU.^2+VV.^2)); % Fresnel kernel
+        ff  = fftshift(fft2(ifftshift(f)));         % FFT of wave field
+        H   = exp(-i.*pi.*obj.lambda.*z.*(UU.^2+VV.^2)); % Fresnel kernel
         C   = exp(i.*obj.k.*z)./(2*obj.R);           % const
         C   = C/abs(C);                              % normalized amplitude
-        U   = C .* fftshift(ifft2(ifftshift(ff.*H)));% convolution
-        U   = abs(U).^2;                             % intensity
+        I   = C .* fftshift(ifft2(ifftshift(ff.*H)));% convolution
+        I   = abs(I).^2;                             % intensity
         gam = fftshift(fft2(ifftshift(srcgauss)));   % damping factor
-        Uf  = fftshift(fft2(ifftshift(U)));          % FFT of intensity
-        U   = abs(fftshift(ifft2(ifftshift(Uf.*gam))));
+        If  = fftshift(fft2(ifftshift(I)));          % FFT of intensity
+        I   = abs(fftshift(ifft2(ifftshift(If.*gam))));
     end
     function F = calcFcoeff(obj)
         % calculates 1st Fourier coefficients in 1D from all class
@@ -341,13 +335,6 @@ methods
         else
             U = interp1(x_o,U0,x_n);
         end
-    end
-    function k = primeFourierPos (obj, z)
-        % calculates the expected 1st Fourier component according to the
-        % resolution and number of periods saved and also taking account of
-        % the magnification due to beam divergence
-        M = (obj.R + z)./obj.R;
-        k = (1./(obj.pxperiod.*M)).*length(obj.x1:obj.x2);
     end
     function p = weightedLSE (obj,simu,expo)
         % conducts the normalized weighted LSQ-error and returns the value
@@ -417,26 +404,6 @@ methods
         legend('grating','phase shift','absorbtion')
         hold off
         title('grating')
-    end
-    function plotTalbotProfile(obj,calc)
-        % plots talbot profile (should be called from the loop)
-        fig2 = figure(2);
-        set(fig2,'Position',[100 100 1024 400],'Color','white')
-        sb1  = subplot (1,2,1);
-        plot(calc);
-        title('vertical mean')
-    end
-    function plotTalbotCarpet(obj,z,pwav)
-        sb2 = subplot (1,2,2);
-        figure(2)
-        imagesc(z*1000,[],pwav);
-        colormap(gray);
-        line(obj.D_R.*1e3.*[1 1],[0 obj.padding],'Color','r','LineWidth',2);
-        line(obj.D_T.*1e3.*[1 1],[0 obj.padding],'Color','r','LineWidth',2);
-        line(obj.D_defr.*1e3.*[1 1],[0 obj.padding],'Color','b','LineWidth',2);
-        line(obj.D_def.*1e3.*[1 1],[0 obj.padding],'Color','b','LineWidth',2);
-        xlabel('propagation distance [mm]');
-        legend('D_R','D_T','D_R (defocussed)','D_T (defocussed)');
     end
 end
 end
