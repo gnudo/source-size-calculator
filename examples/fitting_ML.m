@@ -18,7 +18,7 @@ a = simulation;                   % load methods for calculation
 %--------------------------------------------------------------------------
 a.nameDest = 'exp_data_ML';       % folder that contains experimental data
 a.psize    = 0.76e-6;             % [m] px size of detector
-a.r        = 25;                  % [m] source-to-grating distance
+a.R        = 25;                  % [m] source-to-grating distance
 a.a        = 6.84e-6;             % [m] grating period
 a.z        = linspace(0,1.1,111); % [m] experimental propagation distances
 a.usewin   = 0;                   % apply Tukey/Hanning window function

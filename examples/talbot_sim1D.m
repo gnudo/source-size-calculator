@@ -13,7 +13,7 @@ a = simulation;               % load classes for calculation
 % 1.) PATHS (m-files & src-files) and CONSTANTS
 %--------------------------------------------------------------------------
 a.a       = 6.84e-6;               % [m] grating period
-a.r       = 25;%1e11;              % [m] radius of incidient wave curvature
+a.R       = 25;%1e11;              % [m] radius of incidient wave curvature
 a.E       = 21;                    % [keV]
 a.srcsz   = 53e-6;                 % TOMCAT horizontal src size
 

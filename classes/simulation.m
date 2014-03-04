@@ -4,28 +4,28 @@ classdef simulation < handle
 % and visibility processing for both experimental and simulation data
     properties (Constant)
         % natural constants
-        c   = 299792458;              % [m/s]
-        eV  = 1.6021764874e-19;       % [J] transfer to Joule
-        h   = 6.6260689633e-34;       % [Js]
+        c        = 299792458;              % [m/s]
+        eV       = 1.6021764874e-19;       % [J] transfer to Joule
+        h_planck = 6.6260689633e-34;       % [Js]
     end
     properties
         % constants from calling script
         a          % [m] grating period
         absorb     % [1] grating absorption (values between: 0-1)
+        alpha      % [°] angle of grating's pillar slopes
         dc         % [1] duty cycle
         E          % [keV]
-        alpha      % [°] angle of grating's pillar slopes
         h          % [m] height of grating's pillars
         N          % [1] number of particles --> 2^n !!!
+        nameDest   % destination directory (full path)
         padding    % [1] total number (with zero-padding)
         periods    % [1] grating-size (in terms of periods)
         phShift    % [1] grating phase shift
         plotper    % [1] number of periods for plotting
-        r          % [m] radius of incidient wave curvature
-        srcsz      % [m] source size of beam for simulation
-        rr         % [m] radius of incident wave curvature used for ML fit
-        nameDest   % destination directory (full path)
         psize      % [m] px size of detector
+        R          % [m] radius of incidient wave curvature
+        RR         % [m] radius of incident wave curvature used for ML fit
+        srcsz      % [m] source size of beam for simulation
         usewin     % switch whether to use window function
         z          % propagation distances
     end
@@ -57,11 +57,11 @@ methods
         % calculates wave length [m] of impinging wavefront, Talbot
         % distances [m] (defocussed, replication etc.) and the wavevector
         obj.E = value;      % set energy
-        obj.lambda = obj.c.*obj.h ./ (obj.E.*obj.eV.*1000);
+        obj.lambda = obj.c.*obj.h_planck ./ (obj.E.*obj.eV.*1000);
         obj.D_T    = 2.*(obj.a.^2)/obj.lambda;        % Talbot D
         obj.D_R    = obj.D_T/2;                       % replication D
-        obj.D_def  = (obj.r*obj.D_T)/(obj.r-obj.D_T); % defocussed D_T
-        obj.D_defr = (obj.r*obj.D_R)/(obj.r-obj.D_R); % defocussed D_R
+        obj.D_def  = (obj.R*obj.D_T)/(obj.R-obj.D_T); % defocussed D_T
+        obj.D_defr = (obj.R*obj.D_R)/(obj.R-obj.D_R); % defocussed D_R
         obj.k      = 2.*pi./obj.lambda;               % wave vector
     end
     function set.plotper(obj,value)
@@ -84,7 +84,6 @@ methods
         % when setting "h" set correct phase-shift introduced by
         % grating and absorption level. here we make use of external
         % "xray-interaction-constants" library provided by Zhang Jiang
-        %obj.h = value;
         result=refrac('Au',obj.E,density);
         delta = result.dispersion;
         bet   = result.absorption;
@@ -100,7 +99,7 @@ methods
         % method that is called when propagation distances are set.
         % magnification M as well as the period in [px] is calculated
         obj.z   = value;
-        obj.M   = ( obj.r + obj.z ) ./ obj.r;
+        obj.M   = ( obj.R + obj.z ) ./ obj.R;
         obj.per = obj.a/obj.psize;
         obj.per_approx = obj.per.*obj.M;
     end
@@ -199,8 +198,8 @@ methods
         
         % Check whether curvature of impinging wavefront was differently
         % set
-        if isempty(obj.rr)
-            obj.rr = obj.r;
+        if isempty(obj.RR)
+            obj.RR = obj.R;
         end
         
         % Check whether "phase shift" and "absorption" level are set. Run
@@ -210,7 +209,7 @@ methods
         end 
         
         % Grating Operators
-        ds = sqrt(obj.rr.^2+XX.^2+YY.^2);    % beam diverg. phase shift
+        ds = sqrt(obj.RR.^2+XX.^2+YY.^2);    % beam diverg. phase shift
         U  = exp(i.*obj.k.*ds);              % (1) impinging spherical wave
         U  = U.*((exp(obj.absorb.*G)));      % (2) absorption
         U  = U.*exp(-i.*obj.phShift.*G);     % (3) phase-shift
@@ -228,7 +227,7 @@ methods
         end
         ff = fftshift(fft(ifftshift(U0)));          % FFT of wave field
         H = exp( -i.*pi.*obj.lambda.*z.*obj.u.^2);  % Fresnel kernel
-        C = exp(i.*obj.k.*z)./(2*obj.r);            % const
+        C = exp(i.*obj.k.*z)./(2*obj.R);            % const
         C = C/abs(C);                               % normalized amplitude
         U = C .* fftshift(ifft(ifftshift(ff.*H)));  % convolution
         U = abs(U).^2;                              % intensity
@@ -237,7 +236,7 @@ methods
         % calculates the itensity of a propagated wave field U0 along the
         % z-axis and taking account of the mutual coherence (finite source
         % size) --> principle from Weitkamp-paper with Gaussian src
-        w    = (z + (z==0)*1e-9) * (obj.srcsz/obj.r); % if z=0, set z=1e-9
+        w    = (z + (z==0)*1e-9) * (obj.srcsz/obj.R); % if z=0, set z=1e-9
         sigm_sq = w^2/(8*log(2));
         srcgauss = exp( -(1/2).* (obj.y0.^2)./ sigm_sq);
         srcgauss = srcgauss./sum(srcgauss);           % normalized Gauss
@@ -254,15 +253,15 @@ methods
         % Gaussian src --> all in 2D
         
         % Gaussian of Source sizes in both directions
-        w    = (z + (z==0).*1e-9) * (obj.srcsz/obj.r); % if z=0, set z=1e-9
+        w    = (z + (z==0).*1e-9) * (obj.srcsz/obj.R); % if z=0, set z=1e-9
         sigm_sq = w.^2/(8.*log(2));
         
         [XX YY] = meshgrid(obj.y0,obj.y0);
         
-        gaussX = exp(-(1/2).*(XX.^2)./sigm_sq(1));%./sqrt(2.*pi.*sigm_sq(1));
-        gaussY = exp(-(1/2).*(YY.^2)./sigm_sq(2));%./sqrt(2.*pi.*sigm_sq(2));
+        gaussX = exp(-(1/2).*(XX.^2)./sigm_sq(1));
+        gaussY = exp(-(1/2).*(YY.^2)./sigm_sq(2));
         srcgauss = gaussX .* gaussY;
-        srcgauss = srcgauss./sum(sum(srcgauss));  % normalized Gauss
+        srcgauss = srcgauss./sum(sum(srcgauss));     % normalized Gauss
         
         % if no wave-field at z=0 is given, it is calculated
         if isempty(U0)
@@ -273,7 +272,7 @@ methods
         
         ff  = fftshift(fft2(ifftshift(U0)));         % FFT of wave field
         H   = exp( -i.*pi.*obj.lambda.*z.*(UU.^2+VV.^2)); % Fresnel kernel
-        C   = exp(i.*obj.k.*z)./(2*obj.r);           % const
+        C   = exp(i.*obj.k.*z)./(2*obj.R);           % const
         C   = C/abs(C);                              % normalized amplitude
         U   = C .* fftshift(ifft2(ifftshift(ff.*H)));% convolution
         U   = abs(U).^2;                             % intensity
@@ -347,13 +346,13 @@ methods
         % calculates the expected 1st Fourier component according to the
         % resolution and number of periods saved and also taking account of
         % the magnification due to beam divergence
-        M = (obj.r + z)./obj.r;
+        M = (obj.R + z)./obj.R;
         k = (1./(obj.pxperiod.*M)).*length(obj.x1:obj.x2);
     end
-    function f = weightedLSE (obj,simu,expo)
+    function p = weightedLSE (obj,simu,expo)
         % conducts the normalized weighted LSQ-error and returns the value
-        f = ( (simu./mean(simu) - expo./mean(expo)).^2 ).*expo./mean(expo);
-        f = sum(f);
+        p = ( (simu./mean(simu) - expo./mean(expo)).^2 ).*expo./mean(expo);
+        p = sum(p);
     end
     function img     = loadSmallImg (obj,ind)
         % loads "small images" created with Save2img and throws failure if
@@ -377,22 +376,17 @@ methods
         imwrite(img,file,'tif');
     end
     function [Fh Fv] = visCalc (obj,img,n)
-        % TODO: - remove "set" dependency
-        %       - change order of V and H (to be consistent with others)
-        if ~exist('set','var')
-            set = 1;        % will be obsolete...
-        end
         % analyses visibility of <img> in vertical and horizontal direction
-        per = obj.per_approx(set,n);  % approximated period in [px]
+        per = obj.per_approx(n);  % approximated period in [px]
         mittel=mean(mean(img));
-
-        % --- vertical
-        meanv = mean(img,2);          % visibility in vertical   direction
-        Fv = obj.vis1D(meanv,per)./mittel;
 
         % --- horizontal
         meanh = mean(img,1);          % visibility in horizontal direction
         Fh = obj.vis1D(meanh,per)./mittel;
+
+        % --- vertical
+        meanv = mean(img,2);          % visibility in vertical   direction
+        Fv = obj.vis1D(meanv,per)./mittel;
     end
     function f = vis1D (obj,vec,per)
         % visibility calculation by identifying 1st Fourier component and

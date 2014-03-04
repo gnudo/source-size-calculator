@@ -19,7 +19,7 @@ a.nameDest = 'exp_data';          % destination folder for saving images
 % 1.) Parameters for synthetic data
 %--------------------------------------------------------------------------
 a.a       = 6.84e-6;              % [m] grating period
-a.r       = 25;                   % [m] radius of incidient wave curvature
+a.R       = 25;                   % [m] radius of incidient wave curvature
 a.E       = 14;                   % [keV] x-ray energy
 a.srcsz   = [133e-6 52e-6];       % [m] TOMCAT src sizes
 a.periods = 48;                   % grating-size (in terms of periods)
