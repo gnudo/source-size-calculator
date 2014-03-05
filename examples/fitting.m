@@ -53,5 +53,5 @@ end
 %--------------------------------------------------------------------------
 % 3.) Run fitting algorithm with the above parameters
 %--------------------------------------------------------------------------
-fitfunc('results',a,F_exp,dc_min,dc_max,alpha_min, ...
+fitfunc('results',a,'Au',F_exp,dc_min,dc_max,alpha_min, ...
                   alpha_max,sigma_min,sigma_max,E_min,E_max,k_max,n_max,s);

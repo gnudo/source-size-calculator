@@ -35,7 +35,7 @@ gra = a.talbotGrid1D;
 %--------------------------------------------------------------------------
 % 3.) Wave field @ Grid
 %--------------------------------------------------------------------------
-a.calcRefracAbsorb(17);
+a.calcRefracAbsorb('Au',17);
 f = a.waveFieldGrat(gra);
 a.plotWaveAtGrating(f,gra);
 

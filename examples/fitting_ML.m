@@ -56,7 +56,7 @@ end
 % 3.) Run fitting algorithm with the above parameters (or load results)
 %--------------------------------------------------------------------------
 if ~exist('results_fitting_ML.mat', 'file')
-    fitfunc2('results_fitting_ML', a,F_exp,dc_min,dc_max,alpha_min, ...
+    fitfunc2('results_fitting_ML',a,'Au',F_exp,dc_min,dc_max,alpha_min, ...
                   alpha_max,sigma_min,sigma_max,R_min,R_max,k_max,n_max,s);
 end
 load('results_fitting_ML.mat')

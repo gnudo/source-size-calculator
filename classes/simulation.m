@@ -9,12 +9,15 @@ classdef simulation < handle
         h_planck = 6.6260689633e-34;       % [Js]
     end
     properties
-        % variables that are analog to paper variables
+        % variables with same nomenclature as in the paper
         a          % [m] grating period
         alpha      % [°] angle of grating's pillar slopes
         dc         % [1] duty cycle
         E          % [keV]
         h          % [m] height of grating's pillars
+        k          % [1/m ]wave vector
+        lambda     % [m] wave length of impinging wave-front
+        M          % magnification due to beam divergence
         psize      % [m] px size of detector
         R          % [m] radius of incidient wave curvature
         RR         % [m] radius of incident wave curvature used for ML fit
@@ -39,16 +42,13 @@ classdef simulation < handle
         D_R        % [m] Replication distance
         du         % [1/m] distance in k-space
         dy0        % [m] distance between sampling points (from parameters)
-        k          % wave vector
-        lambda     % [m] wave length of impinging wave-front
         pxperiod   % [px] period of grating in px-values
         u          % [1/m] grating coordinates in k-space (zero-padded)
         x1         % [px] px-value for plotting-ROI
         x2         % [px] px-value for plotting-ROI
         y0         % [m] grating coordinates (zero-padded)
-        per         % [px] number of px per period
-        per_approx  % [px] approx. period due to beam divergence
-        M           % magnification due to beam divergence
+        per        % [px] number of px per period
+        per_approx % [px] approx. period due to beam divergence
     end
 %--------------------------------------------------------------------------
 % Methods
@@ -76,16 +76,16 @@ methods
         obj.plotper = value;
         obj.pxperiod=obj.N/obj.periods;   % px per period
         middle = obj.N/2;
-        obj.x1 = middle - round( (value/2).*obj.pxperiod ) + 1;
-        obj.x2 = middle + round( (value/2).*obj.pxperiod );
+        obj.x1 = middle - round( (obj.plotper/2).*obj.pxperiod ) + 1;
+        obj.x2 = middle + round( (obj.plotper/2).*obj.pxperiod );
     end
-    function calcRefracAbsorb(obj,density)
+    function calcRefracAbsorb(obj,material,density)
         % when setting "h" set correct phase-shift introduced by
         % grating and absorption level. here we make use of external
         % "xray-interaction-constants" library provided by Zhang Jiang
-        result=refrac('Au',obj.E,density);
-        delta = result.dispersion;
-        bet   = result.absorption;
+        result = refrac(material,obj.E,density);
+        delta  = result.dispersion;
+        bet    = result.absorption;
         obj.phShift = -obj.k*delta*obj.h;
         obj.absorb  = (-bet.*obj.k.*obj.h);
     end
@@ -106,7 +106,7 @@ methods
         % construction of 1D grid from all parameters. if "alpha" is
         % non-zero, then the grating bumps are assumed to be trapezoidal
         % and the grating is constructed.
-        sca    = obj.N./obj.periods;
+        sca    = round(obj.N./obj.periods);
         xx     = round(sca.*obj.dc);
         ha_xx  = round(xx/2);
         if obj.alpha ~= 0 | isempty(obj.alpha) ~= 0
@@ -200,7 +200,7 @@ methods
     end
     function psi = waveFieldProp (obj, z, f)
         % calculates the itensity of a propagated wave field f along the
-        % z-axis. it is the absolute square root of Eq. (8).
+        % z-axis. "psi" is the absolute square root of Eq. (8).
         if isempty(f)
             f = obj.waveFieldGrat(obj.talbotGrid1D);
         end
@@ -263,7 +263,7 @@ methods
         % properties
 
         % GRID creation & Wave field @ Grid
-        obj.calcRefracAbsorb(17);
+        obj.calcRefracAbsorb('Au',17);
         gra = obj.talbotGrid1D;
         f = obj.waveFieldGrat(gra);
         
@@ -299,7 +299,7 @@ methods
         F_H = F(:,1);
         F_V = F(:,2);
     end
-    function U = scale2Det (obj, U0)
+    function f = scale2Det (obj, f)
         % scales Talbot-carpet to the pixel size (psize) of the detector.
         % if the images are not cropped, then obj.plotper is set with
         % obj.periods
@@ -313,11 +313,11 @@ methods
         x_o   = linspace(0,l,res_o);      % original resolution from simu
         x_n   = linspace(0,l,res_n);      % resolution from detector
         
-        if size(U0,1) > 1 & size(U0,2) > 1
+        if size(f,1) > 1 & size(f,2) > 1
             x = linspace(1,res_o,res_n);
-            U = interp2(U0,x,x.');
+            f = interp2(f,x,x.');
         else
-            U = interp1(x_o,U0,x_n);
+            f = interp1(x_o,f,x_n);
         end
     end
     function p = weightedLSE (obj,simu,expo)

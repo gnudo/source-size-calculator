@@ -5,7 +5,7 @@
 % Author: Goran Lovric
 % License: GPL 3 (see LICENSE file in root folder)
 %--------------------------------------------------------------------------
-function fitfunc(name,a,F_exp,dc_min,dc_max,alpha_min, ...
+function fitfunc(name,a,material,F_exp,dc_min,dc_max,alpha_min, ...
                    alpha_max,sigma_min,sigma_max,E_min,E_max,k_max,n_max,s)
 % number of iterations
 N_max = 2 * n_max^4 * k_max * length(a.z)  % Eq. (18) from paper
@@ -37,7 +37,7 @@ E      = ene.nestIntervals(n_max,s);
 
 for n_E=1:n_max
   a.E = E(n_E);
-  a.calcRefracAbsorb(17);% calculate delta & beta for grating with rho = 17
+  a.calcRefracAbsorb(material,17);% calculate delta & beta
   for n_sigma=1:n_max
     sigma = [sigmaH(n_sigma) sigmaV(n_sigma)];
     for n_alpha=1:n_max
