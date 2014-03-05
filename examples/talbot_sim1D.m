@@ -42,13 +42,11 @@ a.plotWaveAtGrating(f,gra);
 %--------------------------------------------------------------------------
 % 4.) Propagation along z-axis
 %--------------------------------------------------------------------------
-a.plotper = 4;      % number of periods to be plotted --> sets a.x1, a.x2
 
 for ii=1:length(a.z)
     ii
     calc = a.waveFieldPropMutual(a.z(ii),f);
-    crop = calc(a.x1:a.x2);     % crop to <plotper> periods
-    crop = a.scale2Det(crop);   % scale to detector resolution
+    crop = a.scale2Det(calc);   % scale to detector resolution
     pwav(:,ii) = crop;
     %--- Plot ---
     if (mod(ii,100) == 0)

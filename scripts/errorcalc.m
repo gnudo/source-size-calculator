@@ -10,7 +10,7 @@
 function [del_E,del_sigma] = errorcalc(a,del_z,E,E_start,sigma, ...
                                                       sigma_start,dc,alpha)
 % (0) Constants that are used below
-eps = 0.01;  % required precision of Newton method
+eps = 0.01;  % precision of Newton method
 f_H = 1;     % difference between two p after consecutive Newton iterations
 f_V = f_H;
 ff  = f_H;

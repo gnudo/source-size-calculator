@@ -24,10 +24,9 @@ a.z        = linspace(0,1.1,111); % [m] experimental propagation distances
 a.usewin   = 0;                   % apply Tukey/Hanning window function
 a.E        = 18;                  % [keV] X-ray energy
 
-a.h        = 3.39e-6;             % [m] height of grating structure %!!!!!!!!!!!!!!!!!!!!
+a.h        = 3.39e-6;             % [m] height of grating structure
 a.periods  = 32;                  % grating-size (in terms of periods)
 a.N        = 2^13;                % number of particles (pixels)
-a.plotper  = 14;      % number of periods to be plotted --> sets a.x1, a.x2
 
 dc_min     = 0.5;                 % [1] duty cycle lower limit
 dc_max     = 0.54;                % [1] duty cycle upper limit

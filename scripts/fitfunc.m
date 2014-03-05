@@ -48,12 +48,8 @@ for n_E=1:n_max
         disp([num2str(counter) ' of ' num2str(counter_tot)]);
       
         % "Fourier Analysis" subroutine
-        for ii = 1:2 % Loop bor both horizontal and vertical directions
-          a.sigma     = sigma(ii);
-          a.dc        = dc(ii);
-          a.alpha     = alpha(ii);
-          F_sim(:,ii) = a.calcFcoeff;
-        end
+        [F_sim_x,F_sim_y] = a.calcFcoeff2D(a.E,sigma,dc,alpha);
+        F_sim = [F_sim_x F_sim_y];
       
         % "Weighted LSE" subroutine
         p_H = a.weightedLSE(F_sim(:,1),F_exp(:,1)); % horizontal F-coeff

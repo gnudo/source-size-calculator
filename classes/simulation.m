@@ -31,7 +31,6 @@ classdef simulation < handle
         nameDest   % destination directory (full path)
         periods    % [1] grating-size (in terms of periods)
         phShift    % [1] grating phase shift
-        plotper    % [1] number of periods for plotting
         usewin     % switch whether to use window function
     end
     properties
@@ -66,18 +65,20 @@ methods
         obj.D_defr = (obj.R*obj.D_R)/(obj.R-obj.D_R); % defocussed D_R
         obj.k      = 2.*pi./obj.lambda;               % wave vector
     end
-    function set.plotper(obj,value)
-        % when setting "plotper" (number of periods to be plotted) the x1
-        % and x2 coordinates are calculated to select the ROI from the
-        % original img
-        if rem(value,int32(value)) ~= 0
-            error('number of period must be an INTEGER');
-        end
-        obj.plotper = value;
-        obj.pxperiod=obj.N/obj.periods;   % px per period
-        middle = obj.N/2;
-        obj.x1 = middle - round( (obj.plotper/2).*obj.pxperiod ) + 1;
-        obj.x2 = middle + round( (obj.plotper/2).*obj.pxperiod );
+    function set.nameDest(obj,value)
+        % set destination directory and mkdir
+        mkdir(value);
+        obj.nameDest = value;
+    end
+    function set.z(obj,value)
+        % method that is called when propagation distances are set.
+        % magnification M as well as the period in [px] is calculated
+        % TODO: probably obj.R has to be substituted with obj.RR (test with
+        % ML fitting method)
+        obj.z   = value;
+        obj.M   = ( obj.R + obj.z ) ./ obj.R;
+        obj.per = obj.a/obj.psize;
+        obj.per_approx = obj.per.*obj.M;
     end
     function calcRefracAbsorb(obj,material,density)
         % when setting "h" set correct phase-shift introduced by
@@ -87,20 +88,7 @@ methods
         delta  = result.dispersion;
         bet    = result.absorption;
         obj.phShift = -obj.k*delta*obj.h;
-        obj.absorb  = (-bet.*obj.k.*obj.h);
-    end
-    function set.nameDest(obj,value)
-        % set destination directory and mkdir
-        mkdir(value);
-        obj.nameDest = value;
-    end
-    function set.z(obj,value)
-        % method that is called when propagation distances are set.
-        % magnification M as well as the period in [px] is calculated
-        obj.z   = value;
-        obj.M   = ( obj.R + obj.z ) ./ obj.R;
-        obj.per = obj.a/obj.psize;
-        obj.per_approx = obj.per.*obj.M;
+        obj.absorb  = -bet.*obj.k.*obj.h;
     end
     function G = talbotGrid1D (obj)
         % construction of 1D grid from all parameters. if "alpha" is
@@ -239,7 +227,7 @@ methods
         gaussX = exp(-(1/2).*(XX.^2)./sigm_sq(1));
         gaussY = exp(-(1/2).*(YY.^2)./sigm_sq(2));
         srcgauss = gaussX .* gaussY;
-        srcgauss = srcgauss./sum(sum(srcgauss));     % normalized Gauss
+        srcgauss = srcgauss./sum(sum(srcgauss));       % normalized Gauss
         
         % if no wave-field at z=0 is given, it is calculated
         if isempty(f)
@@ -261,25 +249,31 @@ methods
     function F = calcFcoeff(obj)
         % calculates 1st Fourier coefficients in 1D from all class
         % properties
+        % TODO: remove 'Au' hardcode and change name
 
         % GRID creation & Wave field @ Grid
         obj.calcRefracAbsorb('Au',17);
         gra = obj.talbotGrid1D;
         f = obj.waveFieldGrat(gra);
         
-        % Propagation along z-axis
-        obj.plotper = 14;      % number of periods to be plotted --> sets obj.x1, obj.x2
-        resolu    = 512;     % desired resolution
+        % Correction for border areas
+        obj.pxperiod=obj.N/obj.periods;   % px per period
+        periods_crop = round(0.9 .* obj.periods);
+        middle = obj.N/2;
+        x1 = middle - round( (periods_crop/2).*obj.pxperiod ) + 1;
+        x2 = middle + round( (periods_crop/2).*obj.pxperiod );
 
+        % Propagation along z-axis
+        resolu    = 512;     % desired resolution
         for ii=1:length(obj.z)
             lineTalbot = obj.waveFieldPropMutual(obj.z(ii),f); % Fresnel-pro + mutual coh.fnct
-            crop = lineTalbot(obj.x1:obj.x2);                % crop to <plotper> periods
+            crop = lineTalbot(x1:x2);                % crop to <plotper> periods
             crop = interp1(crop,linspace(1,length(crop),resolu));
             pwav(:,ii) = crop;
         end
         
         % Visibility calculation
-        per = obj.M .* size(pwav,1)/obj.plotper;        % period in [px]
+        per = obj.M .* size(pwav,1)/periods_crop;        % period in [px]
 
         for jj=1:length(obj.z)
             vec = pwav(:,jj);
@@ -301,14 +295,9 @@ methods
     end
     function f = scale2Det (obj, f)
         % scales Talbot-carpet to the pixel size (psize) of the detector.
-        % if the images are not cropped, then obj.plotper is set with
-        % obj.periods
-        if isempty(obj.plotper)
-            obj.plotper = obj.periods;
-        end
-        l     = obj.plotper.*obj.a;                  % [m] size of FOV
-        res_o = length(obj.x1:obj.x2);               % [1] orig. resoultion
-        res_n = round(obj.plotper.*obj.a./obj.psize);% [1] new resolution
+        l     = obj.periods.*obj.a;       % [m] size of FOV
+        res_o = length(f);                % [1] orig. resoultion
+        res_n = round(l./obj.psize);      % [1] new resolution
 
         x_o   = linspace(0,l,res_o);      % original resolution from simu
         x_n   = linspace(0,l,res_n);      % resolution from detector
