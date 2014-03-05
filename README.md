@@ -8,8 +8,8 @@ Feel free to report any kind of bugs or suggestions for improvement: [here](http
 ## Structure
 
 - `classes` folder: contains all methods for calculating source sizes
-- `scripts` folder: contains implementations for both the source size calculation and the multilayer characterization
-- `examples` folder: contains examples that can be run to see how the tools work
+- `functions` folder: contains implementations for both the source size calculation and the multilayer characterization as well as the calculations for energy and source size uncertainties. The methods are implemented as Matlab functions. 
+- `examples` folder: contains examples that can be run to see how the tools work. All methods are called from scripts located in this folder.
 
 ## Tutorial
 
@@ -24,7 +24,7 @@ Best way to start using the tools is to run `demo.m` from `examples` folder. It 
 
 Following TODO-s are currently being conducted:
 
-- rebase `scripts` and `examples` folders to reduce redundancies
+- rebase `functions` and `examples` folders to reduce redundancies
 - remove unused methods and complete documentation
 - remove *hard-coded* variables, etc.
 - apply the tools without knowing the grating parameters (i.e. one has a pure phase grating etc.)

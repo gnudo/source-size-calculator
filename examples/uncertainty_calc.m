@@ -9,7 +9,7 @@
 close all;clc;clear;
 addpath('../classes');
 addpath('../classes/xray-interaction-constants');
-addpath('../scripts');
+addpath('../functions');
 
 load('results.mat');
 
