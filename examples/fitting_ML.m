@@ -9,7 +9,7 @@
 close all;clc;clear;
 addpath('../classes');
 addpath('../classes/xray-interaction-constants');
-addpath('../scripts');
+addpath('../functions');
 
 a = simulation;                   % load methods for calculation
 
@@ -18,16 +18,15 @@ a = simulation;                   % load methods for calculation
 %--------------------------------------------------------------------------
 a.nameDest = 'exp_data_ML';       % folder that contains experimental data
 a.psize    = 0.76e-6;             % [m] px size of detector
-a.r        = 25;                  % [m] source-to-grating distance
+a.R        = 25;                  % [m] source-to-grating distance
 a.a        = 6.84e-6;             % [m] grating period
 a.z        = linspace(0,1.1,111); % [m] experimental propagation distances
 a.usewin   = 0;                   % apply Tukey/Hanning window function
 a.E        = 18;                  % [keV] X-ray energy
 
-a.gHeight  = 3.39e-6;             % [m] height of grating structure %!!!!!!!!!!!!!!!!!!!!
+a.h        = 3.39e-6;             % [m] height of grating structure
 a.periods  = 32;                  % grating-size (in terms of periods)
 a.N        = 2^13;                % number of particles (pixels)
-a.plotper  = 14;      % number of periods to be plotted --> sets a.x1, a.x2
 
 dc_min     = 0.5;                 % [1] duty cycle lower limit
 dc_max     = 0.54;                % [1] duty cycle upper limit
@@ -56,7 +55,7 @@ end
 % 3.) Run fitting algorithm with the above parameters (or load results)
 %--------------------------------------------------------------------------
 if ~exist('results_fitting_ML.mat', 'file')
-    fitfunc2('results_fitting_ML', a,F_exp,dc_min,dc_max,alpha_min, ...
+    fitfunc2('results_fitting_ML',a,'Au',F_exp,dc_min,dc_max,alpha_min, ...
                   alpha_max,sigma_min,sigma_max,R_min,R_max,k_max,n_max,s);
 end
 load('results_fitting_ML.mat')
@@ -65,14 +64,14 @@ load('results_fitting_ML.mat')
 % 4.) Simulate F-coefficients from the loaded parameters (for plotting)
 %--------------------------------------------------------------------------
 a.srcsz   = src_H.val;
-a.duty    = duty_H.val;
-a.gAngle  = ang_H.val;
+a.dc      = duty_H.val;
+a.alpha   = ang_H.val;
 a.rr      = rad_H.val;
 F_simH = a.calcFcoeff;
 
 a.srcsz   = src_V.val;
-a.duty    = duty_V.val;
-a.gAngle  = ang_V.val;
+a.dc      = duty_V.val;
+a.alpha   = ang_V.val;
 a.rr      = rad_V.val;
 F_simV = a.calcFcoeff;
 

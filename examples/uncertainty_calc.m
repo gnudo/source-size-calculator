@@ -9,7 +9,7 @@
 close all;clc;clear;
 addpath('../classes');
 addpath('../classes/xray-interaction-constants');
-addpath('../scripts');
+addpath('../functions');
 
 load('results.mat');
 
@@ -36,6 +36,6 @@ del_sigma_eff(1) = del_sigma(1) + src_H.del;
 del_sigma_eff(2) = del_sigma(2) + src_V.del;
 
 %--------------------------------------------------------------------------
-% 2.) Save all into results.mat
+% 3.) Save all into results.mat
 %--------------------------------------------------------------------------
 save('results.mat','del_E_eff','del_sigma_eff','-append')
