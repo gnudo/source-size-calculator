@@ -16,11 +16,11 @@ f_V = f_H;
 ff  = f_H;
 
 % (1) First we calculate the left side of Eq. (19)
-[F_simH,F_simV]   = a.calcFcoeff2D(E,[sigma(1) sigma(2)],...
+[F_simH,F_simV]   = a.calculateFsim2D(E,[sigma(1) sigma(2)],...
                             [dc(1) dc(2)],[alpha(1) alpha(2)]);
 
 a.z = a.z + del_z;
-[F_simH2,F_simV2] = a.calcFcoeff2D(E,[sigma(1) sigma(2)],...
+[F_simH2,F_simV2] = a.calculateFsim2D(E,[sigma(1) sigma(2)],...
                             [dc(1) dc(2)],[alpha(1) alpha(2)]);
                         
 p_H = a.weightedLSE(F_simH,F_simH2);
@@ -36,7 +36,7 @@ d_sigma_H = (sigma_H_start - sigma(1)) .* [1 1.05];
 d_sigma_V = (sigma_V_start - sigma(2)) .* [1 1.05];
 
 for ii=1:2
-    [F_simH2,F_simV2] = a.calcFcoeff2D(E,[sigma(1)+d_sigma_H(ii) ...
+    [F_simH2,F_simV2] = a.calculateFsim2D(E,[sigma(1)+d_sigma_H(ii) ...
                                        sigma(2)+d_sigma_V(ii)], ...
                             [dc(1) dc(2)],[alpha(1) alpha(2)]);
 	del_p_H(ii) = a.weightedLSE(F_simH2,F_simH) - p_H;
@@ -58,7 +58,7 @@ while ff > eps
 d_E = (E_start - E) .* [1 1.05];
 
 for ii=1:2
-    [F_simH2,F_simV2] = a.calcFcoeff2D(E+d_E(ii),[sigma(1) sigma(2)], ...
+    [F_simH2,F_simV2] = a.calculateFsim2D(E+d_E(ii),[sigma(1) sigma(2)], ...
                             [dc(1) dc(2)],[alpha(1) alpha(2)]);
 	del_p(ii) = a.weightedLSE(F_simH2,F_simH) - max([p_H p_V]);
 end

@@ -32,12 +32,22 @@ a.z = linspace(0,a.D_def*2,501);  % [m] propagation distance in meters
 % 2.) GRID creation
 %--------------------------------------------------------------------------
 gra = a.talbotGrid1D;
+
 %--------------------------------------------------------------------------
-% 3.) Wave field @ Grid
+% 3.) Wave field @ Grid and Plot
 %--------------------------------------------------------------------------
 a.calcRefracAbsorb('Au',17);
 f = a.waveFieldGrat(gra);
-a.plotWaveAtGrating(f,gra);
+fig1=figure(1);
+    set(fig1,'Position',[100 600 1024 400],'Color','white')
+    area(a.y0,gra);colormap summer;
+    hold on;
+    plot(a.y0,angle(f),'ro');
+    plot(a.y0,abs(f).^2,'b*');
+    line([0 a.a],[1.02 1.02],'Color','g','LineWidth',3);
+    legend('grating','phase shift','absorbtion')
+    hold off
+    title('grating')
 
 %--------------------------------------------------------------------------
 % 4.) Propagation along z-axis

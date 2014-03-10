@@ -10,9 +10,9 @@ addpath('../classes');
 addpath('../classes/xray-interaction-constants');
 
 a = simulation;                   % load methods for calculation
-% if isdir('exp_data')
-%     rmdir('exp_data','s');        % delete previously created files
-% end
+if isdir('exp_data')
+    rmdir('exp_data','s');        % delete previously created files
+end
 a.nameDest = 'exp_data';          % destination folder for saving images
 
 %--------------------------------------------------------------------------

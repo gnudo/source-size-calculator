@@ -57,7 +57,7 @@ methods
         % method that is called when energy E [keV] is "set". it
         % calculates wave length [m] of impinging wavefront, Talbot
         % distances [m] (defocussed, replication etc.) and the wavevector
-        obj.E = value;      % set energy
+        obj.E      = value;                           % set energy
         obj.lambda = obj.c.*obj.h_planck ./ (obj.E.*obj.eV.*1000);
         obj.D_T    = 2.*(obj.a.^2)/obj.lambda;        % Talbot D
         obj.D_R    = obj.D_T/2;                       % replication D
@@ -66,17 +66,23 @@ methods
         obj.k      = 2.*pi./obj.lambda;               % wave vector
     end
     function set.nameDest(obj,value)
-        % set destination directory and mkdir
-        mkdir(value);
+        % set destination directory and mkdir if folder doesn't exist
+        if exist(value,'dir') ~= 7
+            mkdir(value);
+        end
         obj.nameDest = value;
     end
     function set.z(obj,value)
         % method that is called when propagation distances are set.
         % magnification M as well as the period in [px] is calculated
-        % TODO: probably obj.R has to be substituted with obj.RR (test with
-        % ML fitting method)
         obj.z   = value;
-        obj.M   = ( obj.R + obj.z ) ./ obj.R;
+        
+        % Check whether curvature of impinging wavefront was differently
+        % set
+        if isempty(obj.RR)
+            obj.RR = obj.R;
+        end
+        obj.M   = ( obj.RR + obj.z ) ./ obj.RR;
         obj.per = obj.a/obj.psize;
         obj.per_approx = obj.per.*obj.M;
     end
@@ -170,12 +176,6 @@ methods
             YY = 0;
         end
         
-        % Check whether curvature of impinging wavefront was differently
-        % set
-        if isempty(obj.RR)
-            obj.RR = obj.R;
-        end
-        
         % Check whether "phase shift" and "absorption" level are set. Run
         % e.g. obj.calcRefracAbsorb(17) before obj.waveFieldGrat.
         if isempty(obj.phShift) | isempty(obj.absorb)
@@ -246,18 +246,17 @@ methods
         If  = fftshift(fft2(ifftshift(I)));          % FFT of intensity
         I   = abs(fftshift(ifft2(ifftshift(If.*gam))));
     end
-    function F = calcFcoeff(obj)
+    function F = calculateFsim(obj)
         % calculates 1st Fourier coefficients in 1D from all class
         % properties
-        % TODO: remove 'Au' hardcode and change name
 
         % GRID creation & Wave field @ Grid
-        obj.calcRefracAbsorb('Au',17);
         gra = obj.talbotGrid1D;
         f = obj.waveFieldGrat(gra);
         
-        % Correction for border areas
-        obj.pxperiod=obj.N/obj.periods;   % px per period
+        % Correction for border areas. We reduce the number of simulated
+        % periods by 10%
+        obj.pxperiod=obj.N/obj.periods;           % px per period
         periods_crop = round(0.9 .* obj.periods);
         middle = obj.N/2;
         x1 = middle - round( (periods_crop/2).*obj.pxperiod ) + 1;
@@ -273,14 +272,14 @@ methods
         end
         
         % Visibility calculation
-        per = obj.M .* size(pwav,1)/periods_crop;        % period in [px]
+        per = obj.M .* size(pwav,1)/periods_crop; % period in [px]
 
         for jj=1:length(obj.z)
             vec = pwav(:,jj);
             F(jj,1) = obj.vis1D (vec,per(jj));
         end 
     end
-    function [F_H F_V] = calcFcoeff2D(obj,E,sigma,dc,alpha)
+    function [F_H F_V] = calculateFsim2D(obj,E,sigma,dc,alpha)
         % calculates 1st Fourier coefficients for all given parameters for
         % both the horizontal and vertical direction
         for ii=1:2
@@ -288,7 +287,7 @@ methods
             obj.dc     = dc(ii);
             obj.alpha  = alpha(ii);
             obj.E      = E;
-            F(:,ii)    = obj.calcFcoeff;
+            F(:,ii)    = obj.calculateFsim;
         end
         F_H = F(:,1);
         F_V = F(:,2);
@@ -314,11 +313,10 @@ methods
         p = ( (simu./mean(simu) - expo./mean(expo)).^2 ).*expo./mean(expo);
         p = sum(p);
     end
-    function img     = loadSmallImg (obj,ind)
+    function img = loadSmallImg (obj,ind)
         % loads "small images" created with Save2img and throws failure if
         % folder is empty. img-s are assumed to be 16bit.
         % ind is the index of the img in the folder (not the name!)
-        % TODO: probably obsolete
         files = dir([obj.nameDest '/*.tif']);
         if size(files,1) == 0
             error('No files loaded. Create small imgs first with Save2img')
@@ -332,51 +330,36 @@ methods
         zspace = '0000';
         zer=zspace(1:end-length(num2str(n)));
         file=sprintf('%s/%s%d.tif',obj.nameDest,zer,n)
-        img = uint16((2^16-1).*(img));       % save as 16bit
+        img = uint16((2^16-1).*(img)); % save as 16bit
         imwrite(img,file,'tif');
     end
     function [Fh Fv] = visCalc (obj,img,n)
         % analyses visibility of <img> in vertical and horizontal direction
-        per = obj.per_approx(n);  % approximated period in [px]
-        mittel=mean(mean(img));
+        per = obj.per_approx(n);       % approximated period in [px]
+        img_mean =mean(img(:));
 
         % --- horizontal
-        meanh = mean(img,1);          % visibility in horizontal direction
-        Fh = obj.vis1D(meanh,per)./mittel;
+        meanh = mean(img,1);           % visibility in horizontal direction
+        Fh = obj.vis1D(meanh,per)./img_mean;
 
         % --- vertical
-        meanv = mean(img,2);          % visibility in vertical   direction
-        Fv = obj.vis1D(meanv,per)./mittel;
+        meanv = mean(img,2);           % visibility in vertical   direction
+        Fv = obj.vis1D(meanv,per)./img_mean;
     end
     function f = vis1D (obj,vec,per)
         % visibility calculation by identifying 1st Fourier component and
         % giving it's value.
-        % TODO: include magnification (like in paper)
         dim = fn_leak1(vec,per);            % find correct window
         vec = vec(1:dim);                   % set
         if obj.usewin == 1
             vec=vec(:).*tukeywin(dim,0.75);
         end
         four = abs(fft(vec));
-        first = round(length(vec)/per);     % expected position of 1st coef
+        kx = round(length(vec)/per);     % expected position of 1st coef
         four_crp = four(2:round(dim/2));
-        first = first-1;                    % because cropping
-        [peak pos] = max(four_crp((first-6):(first+6)));
+        kx = kx-1;                    % because cropping
+        [peak pos] = max(four_crp((kx-4):(kx+4)));
         f = peak/four(1);
-    end
-	function plotWaveAtGrating(obj,f,gra)
-        % plot grating <gra> and grating-wave-front <f> with absorption and
-        % phase part
-        fig1=figure(1);
-        set(fig1,'Position',[100 600 1024 400],'Color','white')
-        area(obj.y0,gra);colormap summer;
-        hold on;
-        plot(obj.y0,angle(f),'ro');
-        plot(obj.y0,abs(f).^2,'b*');
-        line([0 obj.a],[1.02 1.02],'Color','g','LineWidth',3);
-        legend('grating','phase shift','absorbtion')
-        hold off
-        title('grating')
     end
 end
 end

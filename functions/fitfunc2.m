@@ -52,7 +52,7 @@ for n_R=1:n_max
         disp([num2str(counter) ' of ' num2str(counter_tot)]);
       
         % "Fourier Analysis" subroutine
-        [F_sim_x,F_sim_y] = a.calcFcoeff2D(a.E,sigma,dc,alpha);
+        [F_sim_x,F_sim_y] = a.calculateFsim2D(a.E,sigma,dc,alpha);
         F_sim = [F_sim_x F_sim_y];
       
         % "Weighted LSE" subroutine
