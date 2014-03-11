@@ -25,5 +25,5 @@ Best way to start using the tools is to run `demo.m` from root folder. It consis
 Following TODO-s are currently being conducted:
 
 - rebase `functions` and `examples` folders to reduce redundancies
-- complete documentation
 - apply the tools without knowing the grating parameters (i.e. one has a pure phase grating etc.)
+- determine magnification from experimental data automatically (nice-to-have feature)
