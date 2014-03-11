@@ -13,18 +13,17 @@ Feel free to report any kind of bugs or suggestions for improvement: [here](http
 
 ## Tutorial
 
-Best way to start using the tools is to run `demo.m` from `examples` folder. It consists of 3 parts and basically includes all steps that are presented in the paper:
+Best way to start using the tools is to run `demo.m` from root folder. It consists of 4 parts and basically includes all steps that are presented in the paper:
 
-0. Creation of a subfolder called `exp_data` with "fake" experimental data.
-1. Run fitting algorithm on this data and save all results in a file called "results.mat"
-2. Calculate uncertainties for the energy and the source sizes
-3. Print and plot all the results.
+1. Creation of a subfolder called `exp_data` with "fake" experimental data.
+2. Run fitting algorithm on this data and save all results in a file called "results.mat"
+3. Calculate uncertainties for the energy and the source sizes
+4. Print and plot all the results.
 
 ## Roadmap
 
 Following TODO-s are currently being conducted:
 
 - rebase `functions` and `examples` folders to reduce redundancies
-- remove unused methods and complete documentation
-- remove *hard-coded* variables, etc.
+- complete documentation
 - apply the tools without knowing the grating parameters (i.e. one has a pure phase grating etc.)

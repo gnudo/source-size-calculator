@@ -6,7 +6,7 @@
 % License: GPL 3 (see LICENSE file in root folder)
 %--------------------------------------------------------------------------
 function fitfunc(name,a,material,F_exp,dc_min,dc_max,alpha_min, ...
-                   alpha_max,sigma_min,sigma_max,E_min,E_max,k_max,n_max,s)
+            alpha_max,sigma_min,sigma_max,E_min,E_max,k_max,n_max,s,resolu)
 % number of iterations
 N_max = 2 * n_max^4 * k_max * length(a.z)  % Eq. (18) from paper
 counter_tot = n_max^4 *k_max;
@@ -47,8 +47,8 @@ for n_E=1:n_max
         counter = counter+1;
         disp([num2str(counter) ' of ' num2str(counter_tot)]);
       
-        % "Fourier Analysis" subroutine
-        [F_sim_x,F_sim_y] = a.calculateFsim2D(a.E,sigma,dc,alpha);
+        % "Fourier Analysis" subroutine for simulated data
+        [F_sim_x,F_sim_y] = a.calculateFsim2D(a.E,sigma,dc,alpha,resolu);
         F_sim = [F_sim_x F_sim_y];
       
         % "Weighted LSE" subroutine
@@ -82,5 +82,6 @@ end % --> k
 %--------------------------------------------------------------------------
 % 3.) Save to file
 %--------------------------------------------------------------------------
-save(name,'a','F_exp','duty_H','duty_V','ang_H','ang_V','src_H','src_V','ene');
+save(name,'a','F_exp','duty_H','duty_V','ang_H','ang_V','src_H', ...
+     'src_V','ene','resolu');
 end

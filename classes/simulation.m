@@ -3,7 +3,7 @@ classdef simulation < handle
 % grating in 1D and 2D and analysis tools for loading experimental data
 % and visibility processing for both experimental and simulation data
     properties (Constant)
-        % natural constants
+        % natural constants (Source: Wikipedia
         c        = 299792458;              % [m/s]
         eV       = 1.6021764874e-19;       % [J] transfer to Joule
         h_planck = 6.6260689633e-34;       % [Js]
@@ -12,7 +12,9 @@ classdef simulation < handle
         % variables with same nomenclature as in the paper
         a          % [m] grating period
         alpha      % [°] angle of grating's pillar slopes
+        beta       % [1] absorption index
         dc         % [1] duty cycle
+        delta      % [1] refractive index
         E          % [keV]
         h          % [m] height of grating's pillars
         k          % [1/m ]wave vector
@@ -27,27 +29,19 @@ classdef simulation < handle
     properties
         % variables from numerical implementation
         absorb     % [1] grating absorption (values between: 0-1)
-        N          % [1] number of particles --> 2^n !!!
-        nameDest   % destination directory (full path)
-        periods    % [1] grating-size (in terms of periods)
-        phShift    % [1] grating phase shift
-        usewin     % switch whether to use window function
-    end
-    properties
-        % calculated values from parameters
         D_def      % [m] defocussed D_T
         D_defr     % [m] defocussed D_R
         D_T        % [m] Talbot distance
         D_R        % [m] Replication distance
-        du         % [1/m] distance in k-space
-        dy0        % [m] distance between sampling points (from parameters)
-        pxperiod   % [px] period of grating in px-values
-        u          % [1/m] grating coordinates in k-space (zero-padded)
-        x1         % [px] px-value for plotting-ROI
-        x2         % [px] px-value for plotting-ROI
-        y0         % [m] grating coordinates (zero-padded)
-        per        % [px] number of px per period
+        dy0        % [m] distance between sampling points
+        N          % [1] number of particles --> 2^n !!!
+        nameDest   % destination directory (full path)
         per_approx % [px] approx. period due to beam divergence
+        periods    % [1] grating-size (in terms of periods)
+        phShift    % [1] grating phase shift
+        u          % [1/m] grating coordinates in k-space
+        usewin     % switch whether to use window function
+        y0         % [m] grating coordinates
     end
 %--------------------------------------------------------------------------
 % Methods
@@ -74,38 +68,33 @@ methods
     end
     function set.z(obj,value)
         % method that is called when propagation distances are set.
-        % magnification M as well as the period in [px] is calculated
+        % magnification M as well as the period [px] are calculated. if 
+        % curvature of impinging wavefront was differently set, it is taken
+        % into account when calculating the magnification
         obj.z   = value;
-        
-        % Check whether curvature of impinging wavefront was differently
-        % set
         if isempty(obj.RR)
             obj.RR = obj.R;
         end
         obj.M   = ( obj.RR + obj.z ) ./ obj.RR;
-        obj.per = obj.a/obj.psize;
-        obj.per_approx = obj.per.*obj.M;
+        obj.per_approx = obj.M .* (obj.a/obj.psize);
     end
     function calcRefracAbsorb(obj,material,density)
-        % when setting "h" set correct phase-shift introduced by
-        % grating and absorption level. here we make use of external
-        % "xray-interaction-constants" library provided by Zhang Jiang
-        result = refrac(material,obj.E,density);
-        delta  = result.dispersion;
-        bet    = result.absorption;
-        obj.phShift = -obj.k*delta*obj.h;
-        obj.absorb  = -bet.*obj.k.*obj.h;
+        % here we make use of the external "xray-interaction-constants"
+        % library provided by Zhang Jiang to caluclate beta and delta
+        result    = refrac(material,obj.E,density);
+        obj.delta = result.dispersion;
+        obj.beta  = result.absorption;
     end
     function G = talbotGrid1D (obj)
-        % construction of 1D grid from all parameters. if "alpha" is
-        % non-zero, then the grating bumps are assumed to be trapezoidal
-        % and the grating is constructed.
+        % constructs 1D grid from all parameters. if "alpha" is non-zero,
+        % then the grating bumps are assumed to be trapezoidal and the
+        % grating is constructed.
         sca    = round(obj.N./obj.periods);
         xx     = round(sca.*obj.dc);
         ha_xx  = round(xx/2);
         if obj.alpha ~= 0 | isempty(obj.alpha) ~= 0
             angle = obj.alpha .* (pi./180);
-            obj.dy0 = obj.periods.*(obj.a/obj.N); % TODO: remove redundancy with (waveFieldGrat)
+            obj.dy0 = obj.periods.*(obj.a/obj.N);
             dmax   = ((sca-xx)*obj.dy0/2)/obj.h; % max length of bump's slope
             sinval = sin(angle);
             if sinval >= dmax
@@ -116,9 +105,9 @@ methods
             n2 = round(n1/2);
             s1 = linspace(1,0,n2);      % slope 1
             s2 = linspace(0,1,n1-n2);   % slope 2
-            gra   = [ones(1,ha_xx) s1 zeros(1,sca-xx-n1) s2 ones(1,xx-ha_xx)];
+            gra= [ones(1,ha_xx) s1 zeros(1,sca-xx-n1) s2 ones(1,xx-ha_xx)];
         else
-            gra   = [ones(1,ha_xx) zeros(1,sca-xx) ones(1,xx-ha_xx)];
+            gra= [ones(1,ha_xx) zeros(1,sca-xx) ones(1,xx-ha_xx)];
         end
 
         % check whether total grating length will be the same as N,
@@ -163,10 +152,9 @@ methods
         % passing the grating.
         
         % Coordinate-specific values
-        obj.dy0 = obj.periods.*(obj.a/obj.N);
-        obj.y0  = [-(obj.N/2):(obj.N/2-1)].*obj.dy0;
-        obj.du  = 1./ (obj.N.*obj.dy0);
-        obj.u   = [-(obj.N/2):(obj.N/2-1)].*obj.du;
+        obj.y0 = [-(obj.N/2):(obj.N/2-1)].*obj.dy0;
+        du     = 1./ (obj.N.*obj.dy0); % [1/m] sampling distance in k-space
+        obj.u  = [-(obj.N/2):(obj.N/2-1)].*du;
 
         % Check whether grating is 1D or 2D
         if size(G,1) > 1 & size(G,2) > 1
@@ -178,6 +166,8 @@ methods
         
         % Check whether "phase shift" and "absorption" level are set. Run
         % e.g. obj.calcRefracAbsorb(17) before obj.waveFieldGrat.
+        obj.phShift = -obj.k*obj.delta*obj.h;
+        obj.absorb  = -obj.beta.*obj.k.*obj.h;
         if isempty(obj.phShift) | isempty(obj.absorb)
             error('obj.phShift and obj.absorb must be set before running obj.waveFieldGrat(G)!');
         end 
@@ -246,27 +236,24 @@ methods
         If  = fftshift(fft2(ifftshift(I)));          % FFT of intensity
         I   = abs(fftshift(ifft2(ifftshift(If.*gam))));
     end
-    function F = calculateFsim(obj)
-        % calculates 1st Fourier coefficients in 1D from all class
-        % properties
+    function F = calculateFsim(obj,resolu)
+        % simulates 1st F-coefficients in 1D from all class properties
 
         % GRID creation & Wave field @ Grid
         gra = obj.talbotGrid1D;
         f = obj.waveFieldGrat(gra);
         
-        % Correction for border areas. We reduce the number of simulated
-        % periods by 10%
-        obj.pxperiod=obj.N/obj.periods;           % px per period
+        % Correct for border area by reducing the numbers of periods by 10%
+        pxperiod=obj.N/obj.periods;           % px per period
         periods_crop = round(0.9 .* obj.periods);
         middle = obj.N/2;
-        x1 = middle - round( (periods_crop/2).*obj.pxperiod ) + 1;
-        x2 = middle + round( (periods_crop/2).*obj.pxperiod );
+        x1 = middle - round( (periods_crop/2).*pxperiod ) + 1;
+        x2 = middle + round( (periods_crop/2).*pxperiod );
 
         % Propagation along z-axis
-        resolu    = 512;     % desired resolution
         for ii=1:length(obj.z)
-            lineTalbot = obj.waveFieldPropMutual(obj.z(ii),f); % Fresnel-pro + mutual coh.fnct
-            crop = lineTalbot(x1:x2);                % crop to <plotper> periods
+            I = obj.waveFieldPropMutual(obj.z(ii),f);
+            crop = I(x1:x2);   % crop to <periods_crop> periods
             crop = interp1(crop,linspace(1,length(crop),resolu));
             pwav(:,ii) = crop;
         end
@@ -276,18 +263,18 @@ methods
 
         for jj=1:length(obj.z)
             vec = pwav(:,jj);
-            F(jj,1) = obj.vis1D (vec,per(jj));
+            F(jj,1) = obj.FourierAnalysis(vec,per(jj));
         end 
     end
-    function [F_H F_V] = calculateFsim2D(obj,E,sigma,dc,alpha)
-        % calculates 1st Fourier coefficients for all given parameters for
+    function [F_H F_V] = calculateFsim2D(obj,E,sigma,dc,alpha,resolu)
+        % simulate 1st F-coefficients for all given parameters for
         % both the horizontal and vertical direction
         for ii=1:2
             obj.sigma  = sigma(ii);
             obj.dc     = dc(ii);
             obj.alpha  = alpha(ii);
             obj.E      = E;
-            F(:,ii)    = obj.calculateFsim;
+            F(:,ii)    = obj.calculateFsim(resolu);
         end
         F_H = F(:,1);
         F_V = F(:,2);
@@ -313,13 +300,40 @@ methods
         p = ( (simu./mean(simu) - expo./mean(expo)).^2 ).*expo./mean(expo);
         p = sum(p);
     end
+    function F = FourierAnalysis (obj,vec,per)
+        % visibility calculation by identifying 1st Fourier component and
+        % giving it's value.
+        dim = fn_leak1(vec,per);     % find correct window
+        vec = vec(1:dim);            % set
+        if obj.usewin == 1
+            vec=vec(:).*tukeywin(dim,0.75);
+        end
+        four = abs(fft(vec));
+        kx = round(length(vec)/per); % expected position of 1st coef
+        four_crp = four(2:round(dim/2));
+        kx = kx-1;                   % because cropping
+        [peak pos] = max(four_crp((kx-4):(kx+4)));
+        F = peak/four(1);
+    end
+    function [Fh Fv] = FourierAnalysis2D (obj,img,n)
+        % analyses visibility of <img> in vertical and horizontal direction
+        per = obj.per_approx(n);       % approximated period in [px]
+        img_mean =mean(img(:));
+
+        % --- horizontal
+        meanh = mean(img,1);           % visibility in horizontal direction
+        Fh = obj.FourierAnalysis(meanh,per)./img_mean;
+
+        % --- vertical
+        meanv = mean(img,2);           % visibility in vertical   direction
+        Fv = obj.FourierAnalysis(meanv,per)./img_mean;
+    end
     function img = loadSmallImg (obj,ind)
-        % loads "small images" created with Save2img and throws failure if
-        % folder is empty. img-s are assumed to be 16bit.
-        % ind is the index of the img in the folder (not the name!)
+        % loads TIF images that are assumed to be 16bit. ind is the index
+        % of the img in the folder (not the name!)
         files = dir([obj.nameDest '/*.tif']);
         if size(files,1) == 0
-            error('No files loaded. Create small imgs first with Save2img')
+            error(['No files loaded in Folder: ' obj.nameDest]);
         end
         file  = sprintf('%s/%s',obj.nameDest, files(ind).name)
         img   = double(imread(file,'tif'));
@@ -332,34 +346,6 @@ methods
         file=sprintf('%s/%s%d.tif',obj.nameDest,zer,n)
         img = uint16((2^16-1).*(img)); % save as 16bit
         imwrite(img,file,'tif');
-    end
-    function [Fh Fv] = visCalc (obj,img,n)
-        % analyses visibility of <img> in vertical and horizontal direction
-        per = obj.per_approx(n);       % approximated period in [px]
-        img_mean =mean(img(:));
-
-        % --- horizontal
-        meanh = mean(img,1);           % visibility in horizontal direction
-        Fh = obj.vis1D(meanh,per)./img_mean;
-
-        % --- vertical
-        meanv = mean(img,2);           % visibility in vertical   direction
-        Fv = obj.vis1D(meanv,per)./img_mean;
-    end
-    function f = vis1D (obj,vec,per)
-        % visibility calculation by identifying 1st Fourier component and
-        % giving it's value.
-        dim = fn_leak1(vec,per);            % find correct window
-        vec = vec(1:dim);                   % set
-        if obj.usewin == 1
-            vec=vec(:).*tukeywin(dim,0.75);
-        end
-        four = abs(fft(vec));
-        kx = round(length(vec)/per);     % expected position of 1st coef
-        four_crp = four(2:round(dim/2));
-        kx = kx-1;                    % because cropping
-        [peak pos] = max(four_crp((kx-4):(kx+4)));
-        f = peak/four(1);
     end
 end
 end

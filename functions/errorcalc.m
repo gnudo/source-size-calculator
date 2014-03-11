@@ -8,7 +8,8 @@
 % License: GPL 3 (see LICENSE file in root folder)
 %--------------------------------------------------------------------------
 function [del_E,del_sigma] = errorcalc(a,del_z,E,E_start,sigma, ...
-                                                      sigma_start,dc,alpha)
+                                               sigma_start,dc,alpha,resolu)
+
 % (0) Constants that are used below
 eps = 0.01;  % precision of Newton method
 f_H = 1;     % difference between two p after consecutive Newton iterations
@@ -17,11 +18,11 @@ ff  = f_H;
 
 % (1) First we calculate the left side of Eq. (19)
 [F_simH,F_simV]   = a.calculateFsim2D(E,[sigma(1) sigma(2)],...
-                            [dc(1) dc(2)],[alpha(1) alpha(2)]);
+                            [dc(1) dc(2)],[alpha(1) alpha(2)],resolu);
 
 a.z = a.z + del_z;
 [F_simH2,F_simV2] = a.calculateFsim2D(E,[sigma(1) sigma(2)],...
-                            [dc(1) dc(2)],[alpha(1) alpha(2)]);
+                            [dc(1) dc(2)],[alpha(1) alpha(2)],resolu);
                         
 p_H = a.weightedLSE(F_simH,F_simH2);
 p_V = a.weightedLSE(F_simV,F_simV2);
@@ -38,7 +39,7 @@ d_sigma_V = (sigma_V_start - sigma(2)) .* [1 1.05];
 for ii=1:2
     [F_simH2,F_simV2] = a.calculateFsim2D(E,[sigma(1)+d_sigma_H(ii) ...
                                        sigma(2)+d_sigma_V(ii)], ...
-                            [dc(1) dc(2)],[alpha(1) alpha(2)]);
+                            [dc(1) dc(2)],[alpha(1) alpha(2)],resolu);
 	del_p_H(ii) = a.weightedLSE(F_simH2,F_simH) - p_H;
     del_p_V(ii) = a.weightedLSE(F_simV2,F_simV) - p_V;
 end
@@ -59,7 +60,7 @@ d_E = (E_start - E) .* [1 1.05];
 
 for ii=1:2
     [F_simH2,F_simV2] = a.calculateFsim2D(E+d_E(ii),[sigma(1) sigma(2)], ...
-                            [dc(1) dc(2)],[alpha(1) alpha(2)]);
+                            [dc(1) dc(2)],[alpha(1) alpha(2)],resolu);
 	del_p(ii) = a.weightedLSE(F_simH2,F_simH) - max([p_H p_V]);
 end
 ff = del_p(1);
