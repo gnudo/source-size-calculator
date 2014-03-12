@@ -9,21 +9,21 @@ close all;clc;clear;
 %--------------------------------------------------------------------------
 % 0.) create "fake" experimental data (takes ~5min)
 %--------------------------------------------------------------------------
-run synthetic_data
+%run examples/synthetic_data
 
 %--------------------------------------------------------------------------
 % 1.) Apply the fitting algorithm from G. Lovric et. al. (submitted)
 %--------------------------------------------------------------------------
-if ~exist('results.mat', 'file')
-    run fitting
+if ~exist('examples/results.mat', 'file')
+    run examples/fitting
 end
 
 %--------------------------------------------------------------------------
 % 2.) Calculate uncertainties
 %--------------------------------------------------------------------------
-run uncertainty_calc
+run examples/uncertainty_calc
 
 %--------------------------------------------------------------------------
 % 3.) Print all results
 %--------------------------------------------------------------------------
-run print_all
+run examples/print_all

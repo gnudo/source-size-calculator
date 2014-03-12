@@ -10,7 +10,6 @@ close all;clc;clear;
 addpath('../classes');
 addpath('../classes/xray-interaction-constants');
 addpath('../functions');
-
 a = simulation;                   % load methods for calculation
 
 %--------------------------------------------------------------------------
@@ -40,13 +39,14 @@ s          = 1.5;                 % interval stretching factor (from paper)
 
 n_max      = 3;                   % number of intervals to be nested
 k_max      = 7;                   % number of iteration steps
+resolu     = 512;                 % resolution for Talbot images simulation
 
 %--------------------------------------------------------------------------
 % 2.) Calculate Fourier coefficients from experimental data
 %--------------------------------------------------------------------------
 for jj=1:length(a.z)
 	img     = a.loadSmallImg(jj);    % load experimental Talbot imgs
-    [F_Hi F_Vi] = a.visCalc(img,jj); % extract first Fourier coefficients
+    [F_Hi F_Vi] = a.FourierAnalysis2D(img,jj); % extract first Fourier coefficients
     F_exp(jj,1) = F_Hi;
     F_exp(jj,2) = F_Vi;
 end
@@ -56,24 +56,24 @@ end
 %--------------------------------------------------------------------------
 if ~exist('results_fitting_ML.mat', 'file')
     fitfunc2('results_fitting_ML',a,'Au',F_exp,dc_min,dc_max,alpha_min, ...
-                  alpha_max,sigma_min,sigma_max,R_min,R_max,k_max,n_max,s);
+           alpha_max,sigma_min,sigma_max,R_min,R_max,k_max,n_max,s,resolu);
 end
 load('results_fitting_ML.mat')
 
 %--------------------------------------------------------------------------
 % 4.) Simulate F-coefficients from the loaded parameters (for plotting)
 %--------------------------------------------------------------------------
-a.srcsz   = src_H.val;
+a.sigma   = src_H.val;
 a.dc      = duty_H.val;
 a.alpha   = ang_H.val;
-a.rr      = rad_H.val;
-F_simH = a.calcFcoeff;
+a.RR      = rad_H.val;
+F_simH = a.calculateFsim(resolu);
 
-a.srcsz   = src_V.val;
+a.sigma   = src_V.val;
 a.dc      = duty_V.val;
 a.alpha   = ang_V.val;
-a.rr      = rad_V.val;
-F_simV = a.calcFcoeff;
+a.RR      = rad_V.val;
+F_simV = a.calculateFsim(resolu);
 
 %--------------------------------------------------------------------------
 % 5.) Print and plot the results

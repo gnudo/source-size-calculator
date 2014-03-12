@@ -10,9 +10,9 @@ addpath('../classes');
 addpath('../classes/xray-interaction-constants');
 
 a = simulation;                   % load methods for calculation
-% if isdir('exp_data')
-%     rmdir('exp_data','s');        % delete previously created files
-% end
+if isdir('exp_data')
+    rmdir('exp_data','s');        % delete previously created files
+end
 a.nameDest = 'exp_data';          % destination folder for saving images
 
 %--------------------------------------------------------------------------
@@ -31,7 +31,7 @@ a.h       = 3.39e-6;              % [m] height of grating structure
 a.alpha   = 1.5;                  % [°] angle of grating's bumps slope
 a.dc      = 0.52;                 % [1] duty cycle
 
-z = linspace(0,1.1,55);           % [m] propagation distances in meters
+a.z = linspace(0,1.1,55);         % [m] propagation distances in meters
 
 %--------------------------------------------------------------------------
 % 2.) Construct grating
@@ -51,8 +51,8 @@ f = a.waveFieldGrat(gra);    % calculate wavefront after grating
 gauss = exp( (-x.^2./2) - (y.^2./2) );
 gauss = gauss./sum(gauss(:));
 
-for ii=1:length(z)
-	calc = a.waveFieldPropMutual2D(z(ii),f); % wave propagation
+for ii=1:length(a.z)
+	calc = a.waveFieldPropMutual2D(a.z(ii),f);% wave propagation
 	crop = a.scale2Det(calc);                % scale to detector pixel size
 	crop = conv2(crop,gauss,'same');         % simulate detector's PSF
 	crop = crop./4;                          % correct range in Talbot imgs

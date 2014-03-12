@@ -7,24 +7,24 @@ Feel free to report any kind of bugs or suggestions for improvement: [here](http
 
 ## Structure
 
-- `classes` folder: contains all methods for calculating source sizes
-- `functions` folder: contains implementations for both the source size calculation and the multilayer characterization as well as the calculations for energy and source size uncertainties. The methods are implemented as Matlab functions. 
-- `examples` folder: contains examples that can be run to see how the tools work. All methods are called from scripts located in this folder.
+The tools consist of the following 3 layers (folders), listed from bottom to top:
+
+- `classes` folder: contains all methods for calculating source sizes, interval nesting etc.
+- `functions` folder: contains implementations for both the source size calculation and the multilayer characterization as well as the calculations for energy and source size uncertainties. They are implemented as Matlab functions. 
+- `examples` folder: contains examples that can be run to see how the tools work. All methods are called from scripts located in this folder and all constants/parameters are set in scripts within this folder.
 
 ## Tutorial
 
-Best way to start using the tools is to run `demo.m` from `examples` folder. It consists of 3 parts and basically includes all steps that are presented in the paper:
+Best way to start using the tools is to run `demo.m` from root folder. It consists of 4 parts and basically includes all steps that are presented in the paper:
 
-0. Creation of a subfolder called `exp_data` with "fake" experimental data.
-1. Run fitting algorithm on this data and save all results in a file called "results.mat"
-2. Calculate uncertainties for the energy and the source sizes
-3. Print and plot all the results.
+1. Creation of a subfolder called `exp_data` with "fake" experimental data.
+2. Run fitting algorithm on this data and save all results in a file called "results.mat"
+3. Calculate uncertainties for the energy and the source sizes
+4. Print and plot all the results.
 
 ## Roadmap
 
 Following TODO-s are currently being conducted:
 
 - rebase `functions` and `examples` folders to reduce redundancies
-- remove unused methods and complete documentation
-- remove *hard-coded* variables, etc.
-- apply the tools without knowing the grating parameters (i.e. one has a pure phase grating etc.)
+- determine magnification from experimental data automatically

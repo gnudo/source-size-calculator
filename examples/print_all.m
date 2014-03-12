@@ -11,8 +11,8 @@ load('results.mat')
 %--------------------------------------------------------------------------
 % 1.) Simulate F-coefficients from the loaded parameters (for plotting)
 %--------------------------------------------------------------------------
-[F_simH F_simV] = a.calcFcoeff2D(ene.val,[src_H.val src_V.val],...
-                            [duty_H.val duty_V.val],[ang_H.val ang_V.val]);
+[F_simH F_simV] = a.calculateFsim2D(ene.val,[src_H.val src_V.val],...
+                     [duty_H.val duty_V.val],[ang_H.val ang_V.val],resolu);
 
 %--------------------------------------------------------------------------
 % 2.) Print and plot the results

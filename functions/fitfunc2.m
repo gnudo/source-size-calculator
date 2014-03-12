@@ -8,7 +8,7 @@
 % License: GPL 3 (see LICENSE file in root folder)
 %--------------------------------------------------------------------------
 function fitfunc(name,a,material,F_exp,dc_min,dc_max,alpha_min, ...
-                   alpha_max,sigma_min,sigma_max,R_min,R_max,k_max,n_max,s)
+            alpha_max,sigma_min,sigma_max,R_min,R_max,k_max,n_max,s,resolu)
 % number of iterations
 N_max = 2 * n_max^4 * k_max * length(a.z)  % Eq. (18) from paper
 counter_tot = n_max^4 *k_max;
@@ -36,8 +36,8 @@ alphaH = ang_H.nestIntervals(n_max,s);
 alphaV = ang_V.nestIntervals(n_max,s);
 sigmaH = src_H.nestIntervals(n_max,s);
 sigmaV = src_V.nestIntervals(n_max,s);
-R_H    = rad_H.nestIntervals(n_max,s);
-R_V    = rad_V.nestIntervals(n_max,s);
+R_H    = rad_H.nestIntervals(n_max,s)
+R_V    = rad_V.nestIntervals(n_max,s)
 
 for n_R=1:n_max
   R = [R_H(n_R) R_V(n_R)];
@@ -50,22 +50,29 @@ for n_R=1:n_max
         dc = [dcH(n_dc) dcV(n_dc)];
         counter = counter+1;
         disp([num2str(counter) ' of ' num2str(counter_tot)]);
-      
-        % "Fourier Analysis" subroutine
-        [F_sim_x,F_sim_y] = a.calcFcoeff2D(a.E,sigma,dc,alpha);
-        F_sim = [F_sim_x F_sim_y];
+        
+        % "Fourier Analysis" subroutine (we don't use "calculateFsim2D()"
+        % because we need different radii for the horizontal and vertical
+        % directions
+        for ii = 1:2 % Loop bor both horizontal and vertical directions
+          a.RR        = R(ii);
+          a.sigma     = sigma(ii);
+          a.dc        = dc(ii);
+          a.alpha     = alpha(ii);
+          F_sim(:,ii) = a.calculateFsim(resolu);
+        end
       
         % "Weighted LSE" subroutine
         p_H = a.weightedLSE(F_sim(:,1),F_exp(:,1)); % horizontal F-coeff
         p_V = a.weightedLSE(F_sim(:,2),F_exp(:,2)); % vertical F-coeff
-        if p_H <= p_start_H
+        if p_H < p_start_H
           p_start_H = p_H;
           duty_H.setNewMinMax(dc(1));
           ang_H.setNewMinMax(alpha(1));
           src_H.setNewMinMax(sigma(1));
           rad_H.setNewMinMax(R(1));
         end % --> IF
-        if p_V <= p_start_V
+        if p_V < p_start_V
           p_start_V = p_V;
           duty_V.setNewMinMax(dc(2));
           ang_V.setNewMinMax(alpha(2));
@@ -80,5 +87,6 @@ end % --> k
 %--------------------------------------------------------------------------
 % 3.) Save to file
 %--------------------------------------------------------------------------
-save(name,'a','duty_H','duty_V','ang_H','ang_V','src_H','src_V','rad_H','rad_V');
+save(name,'a','duty_H','duty_V','ang_H','ang_V','src_H','src_V', ...
+     'rad_H','rad_V','resolu');
 end

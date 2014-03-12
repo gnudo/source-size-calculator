@@ -1,5 +1,5 @@
 % simple calculation of Talbot-carpet for "paralell" (set r > 1e6) and
-% "cone-beam" impinging wave-front.
+% "cone-beam" impinging wave-front for a pure phase grating
 %--------------------------------------------------------------------------
 % Name: Talbot-simulation
 % Date: 2013-12-13
@@ -22,7 +22,7 @@ a.N       = 2^13;                  % number of particles --> 2^n !!!
 a.psize   = 0.38e-6;               % [m] px size of detector
 
 % Grating parameters
-a.h       = 3.39e-6;                % height of grating structure
+% a.h       = 3.39e-6;                % height of grating structure
 a.alpha   = 4.2;                    % angle of bump's slope
 a.dc      = sqrt(0.285);            % duty cycle
 
@@ -32,19 +32,30 @@ a.z = linspace(0,a.D_def*2,501);  % [m] propagation distance in meters
 % 2.) GRID creation
 %--------------------------------------------------------------------------
 gra = a.talbotGrid1D;
+
 %--------------------------------------------------------------------------
-% 3.) Wave field @ Grid
+% 3.) Wave field @ Grid and Plot
 %--------------------------------------------------------------------------
-a.calcRefracAbsorb('Au',17);
+% a.calcRefracAbsorb('Au',17);
+a.phShift = pi;
+a.absorb  = 0;
 f = a.waveFieldGrat(gra);
-a.plotWaveAtGrating(f,gra);
+fig1=figure(1);
+    set(fig1,'Position',[100 600 1024 400],'Color','white')
+    area(a.y0,gra);colormap summer;
+    hold on;
+    plot(a.y0,angle(f),'ro');
+    plot(a.y0,abs(f).^2,'b*');
+    line([0 a.a],[1.02 1.02],'Color','g','LineWidth',3);
+    legend('grating','phase shift','absorbtion')
+    hold off
+    title('grating')
 
 %--------------------------------------------------------------------------
 % 4.) Propagation along z-axis
 %--------------------------------------------------------------------------
 
 for ii=1:length(a.z)
-    ii
     calc = a.waveFieldPropMutual(a.z(ii),f);
     crop = a.scale2Det(calc);   % scale to detector resolution
     pwav(:,ii) = crop;

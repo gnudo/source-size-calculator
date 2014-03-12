@@ -36,15 +36,16 @@ E_min      = 14-0.5;              % [keV] x-ray energy lower limit
 E_max      = 14+0.5;              % [keV] x-ray energy upper limit
 s          = 1.5;                 % interval stretching factor (from paper)
 
-n_max  = 3;                       % number of intervals to be nested
-k_max  = 7;                       % number of iteration steps
+n_max      = 3;                   % number of intervals to be nested
+k_max      = 7;                   % number of iteration steps
+resolu     = 512;                 % resolution for Talbot images simulation
 
 %--------------------------------------------------------------------------
 % 2.) Calculate Fourier coefficients from experimental data
 %--------------------------------------------------------------------------
 for jj=1:length(a.z)
 	img     = a.loadSmallImg(jj);     % load experimental Talbot imgs
-    [F_Hi F_Vi] = a.visCalc(img,jj);  % extract first Fourier coefficients
+    [F_Hi F_Vi] = a.FourierAnalysis2D(img,jj);  % extract first Fourier coefficients
     F_exp(jj,1) = F_Hi;
     F_exp(jj,2) = F_Vi;
 end
@@ -53,4 +54,4 @@ end
 % 3.) Run fitting algorithm with the above parameters
 %--------------------------------------------------------------------------
 fitfunc('results',a,'Au',F_exp,dc_min,dc_max,alpha_min, ...
-                  alpha_max,sigma_min,sigma_max,E_min,E_max,k_max,n_max,s);
+           alpha_max,sigma_min,sigma_max,E_min,E_max,k_max,n_max,s,resolu);
