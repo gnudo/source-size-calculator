@@ -1,5 +1,5 @@
 % simple calculation of Talbot-carpet for "paralell" (set r > 1e6) and
-% "cone-beam" impinging wave-front.
+% "cone-beam" impinging wave-front for a pure phase grating
 %--------------------------------------------------------------------------
 % Name: Talbot-simulation
 % Date: 2013-12-13
@@ -22,7 +22,7 @@ a.N       = 2^13;                  % number of particles --> 2^n !!!
 a.psize   = 0.38e-6;               % [m] px size of detector
 
 % Grating parameters
-a.h       = 3.39e-6;                % height of grating structure
+% a.h       = 3.39e-6;                % height of grating structure
 a.alpha   = 4.2;                    % angle of bump's slope
 a.dc      = sqrt(0.285);            % duty cycle
 
@@ -36,7 +36,9 @@ gra = a.talbotGrid1D;
 %--------------------------------------------------------------------------
 % 3.) Wave field @ Grid and Plot
 %--------------------------------------------------------------------------
-a.calcRefracAbsorb('Au',17);
+% a.calcRefracAbsorb('Au',17);
+a.phShift = pi;
+a.absorb  = 0;
 f = a.waveFieldGrat(gra);
 fig1=figure(1);
     set(fig1,'Position',[100 600 1024 400],'Color','white')
@@ -54,7 +56,6 @@ fig1=figure(1);
 %--------------------------------------------------------------------------
 
 for ii=1:length(a.z)
-    ii
     calc = a.waveFieldPropMutual(a.z(ii),f);
     crop = a.scale2Det(calc);   % scale to detector resolution
     pwav(:,ii) = crop;

@@ -28,7 +28,8 @@ classdef simulation < handle
     end
     properties
         % variables from numerical implementation
-        absorb     % [1] grating absorption (values between: 0-1)
+        absorb     % [1] absorption level (values between 0 and 1)
+        absorb_exp % [1] exponent in absorption term
         D_def      % [m] defocussed D_T
         D_defr     % [m] defocussed D_R
         D_T        % [m] Talbot distance
@@ -78,12 +79,20 @@ methods
         obj.M   = ( obj.RR + obj.z ) ./ obj.RR;
         obj.per_approx = obj.M .* (obj.a/obj.psize);
     end
+    function set.absorb(obj,value)
+        % when setting the absorption level we calculate the appropriate
+        % exponent to be put in Eq. (11). see below "waveFieldGrat()"
+        obj.absorb = 1-value + (value == 1)*eps;    % Matlab-related
+        obj.absorb_exp = log(obj.absorb)/2;
+    end
     function calcRefracAbsorb(obj,material,density)
         % here we make use of the external "xray-interaction-constants"
         % library provided by Zhang Jiang to caluclate beta and delta
-        result    = refrac(material,obj.E,density);
-        obj.delta = result.dispersion;
-        obj.beta  = result.absorption;
+        result         = refrac(material,obj.E,density);
+        obj.delta      = result.dispersion;
+        obj.beta       = result.absorption;
+        obj.phShift    = -obj.k*obj.delta*obj.h;
+        obj.absorb_exp = -obj.beta.*obj.k.*obj.h;
     end
     function G = talbotGrid1D (obj)
         % constructs 1D grid from all parameters. if "alpha" is non-zero,
@@ -92,13 +101,17 @@ methods
         sca    = round(obj.N./obj.periods);
         xx     = round(sca.*obj.dc);
         ha_xx  = round(xx/2);
-        if obj.alpha ~= 0 | isempty(obj.alpha) ~= 0
+        if isempty(obj.h)
+            warning('...setting grating height to h = 1 micron')
+            obj.h = 1e-6;
+        end
+        if obj.alpha ~= 0 || isempty(obj.alpha) ~= 0
             angle = obj.alpha .* (pi./180);
             obj.dy0 = obj.periods.*(obj.a/obj.N);
             dmax   = ((sca-xx)*obj.dy0/2)/obj.h; % max length of bump's slope
             sinval = sin(angle);
             if sinval >= dmax
-                error('angle of grating bumps is too big');
+                error('angle of grating pillars is too big');
             end
             % length of slopes
             n1 = round(2*obj.h*sinval/obj.dy0);
@@ -157,8 +170,8 @@ methods
         obj.u  = [-(obj.N/2):(obj.N/2-1)].*du;
 
         % Check whether grating is 1D or 2D
-        if size(G,1) > 1 & size(G,2) > 1
-            [XX YY] = meshgrid(obj.y0,obj.y0);
+        if size(G,1) > 1 && size(G,2) > 1
+            [XX,YY] = meshgrid(obj.y0,obj.y0);
         else
             XX = obj.y0;
             YY = 0;
@@ -166,14 +179,15 @@ methods
         
         % Check whether "phase shift" and "absorption" level are set. Run
         % e.g. obj.calcRefracAbsorb(17) before obj.waveFieldGrat.
-        obj.phShift = -obj.k*obj.delta*obj.h;
-        obj.absorb  = -obj.beta.*obj.k.*obj.h;
-        if isempty(obj.phShift) | isempty(obj.absorb)
-            error('obj.phShift and obj.absorb must be set before running obj.waveFieldGrat(G)!');
+        if isempty(obj.phShift) || isempty(obj.absorb_exp)
+            error(['obj.phShift and obj.absorb_exp must be set before', ...
+                   ' running obj.waveFieldGrat(G)! Either use the', ...
+                   ' method calcRefracAbsorb() or manually set', ...
+                   '"phShift" and "absorb" properties.']);
         end 
         
         % Eq. (11) from paper
-        f  = exp( i.*obj.phShift.*G ) .*exp( obj.absorb.*G ) .* ...
+        f  = exp( i.*obj.phShift.*G ) .*exp( obj.absorb_exp.*G ) .* ...
                               exp( i.*obj.k.*sqrt(obj.RR.^2+XX.^2+YY.^2) );
     end
     function psi = waveFieldProp (obj, z, f)
@@ -312,7 +326,7 @@ methods
         kx = round(length(vec)/per); % expected position of 1st coef
         four_crp = four(2:round(dim/2));
         kx = kx-1;                   % because cropping
-        [peak pos] = max(four_crp((kx-4):(kx+4)));
+        [peak pos] = max(four_crp((kx-6):(kx+6)));
         F = peak/four(1);
     end
     function [Fh Fv] = FourierAnalysis2D (obj,img,n)
