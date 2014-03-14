@@ -1,4 +1,4 @@
-% This is a wrapper function for calculating the energy and source size
+% This is a wrapper script for calculating the energy and source size
 % uncertainties with the Newton method. The script "fitting.m" has to be
 % run first and the results have to be saved into "results.mat".
 %--------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 % Creates synthetic Talbot images in folder "exp_data"for demonstrating
-% the results of the proposed experimental setup.
+% the results of the proposed experimental setup [Fig.1 from Lovric et al.,
+% Opt. Express 22, 2745 (2014): http://doi.org/q9m].
 %--------------------------------------------------------------------------
 % Date: 2013-12-20
 % Author: Goran Lovric

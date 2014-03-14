@@ -1,16 +1,16 @@
 % Implementation of the fitting algorithm according to Fig. 3 from paper
-% Lovric et al., Opt. Express 22, 2745 (2014).
+% Lovric et al., Opt. Express 22, 2745 (2014): http://doi.org/q9m.
 %--------------------------------------------------------------------------
 % Date: 2014-01-24
 % Author: Goran Lovric
 % License: GPL 3 (see LICENSE file in root folder)
 %--------------------------------------------------------------------------
-function fitfunc(name,a,material,F_exp,dc_min,dc_max,alpha_min, ...
+function fit_algorithm(name,a,material,F_exp,dc_min,dc_max,alpha_min, ...
             alpha_max,sigma_min,sigma_max,E_min,E_max,k_max,n_max,s,resolu)
 % number of iterations
 N_max = 2 * n_max^4 * k_max * length(a.z)  % Eq. (18) from paper
 counter_tot = n_max^4 *k_max;
-counter = 0;  % help variable to see progress of fitting
+counter = 0;  % help variable to see progress of fitting procedure
 
 p_start_H  = inf;
 p_start_V  = inf;

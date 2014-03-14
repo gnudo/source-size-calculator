@@ -1,5 +1,5 @@
 % Run full test to demonstrate algorithm chain for source size calculation
-% from Lovric et al., Opt. Express 22, 2745 (2014): http://doi.org/q9m
+% from Lovric et al., Opt. Express 22, 2745 (2014): http://doi.org/q9m.
 %--------------------------------------------------------------------------
 % Date: 2013-12-20
 % Author: Goran Lovric

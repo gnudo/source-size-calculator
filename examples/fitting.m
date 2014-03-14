@@ -1,6 +1,6 @@
-% Performs the fitting algorithm on "experimental" data, that is located in
-% "a.nameDest" folder. To apply on arbitrary experimental data, adjust
-% section 1.) with correct parameters from your experiment.
+% This is a wrapper script for performing the fitting algorithm on
+% "experimental" data (located in "a.nameDest" dir). Adjust section 1.)
+% with correct parameters from your experiment.
 %--------------------------------------------------------------------------
 % Date: 2013-12-20
 % Author: Goran Lovric

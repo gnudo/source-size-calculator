@@ -1,13 +1,13 @@
 % Implementation of the fitting algorithm according to Fig. 3 from paper
-% Lovric et al., Opt. Express 22, 2745 (2014).
+% Lovric et al., Opt. Express 22, 2745 (2014): http://doi.org/q9m.
 % --> Modification for the characterization of the multilayer
-% characterization:  is constant; curvature is taken as a fit parameter
+% characterization: E is constant; curvature is taken as a fit parameter.
 %--------------------------------------------------------------------------
 % Date: 2014-01-24
 % Author: Goran Lovric
 % License: GPL 3 (see LICENSE file in root folder)
 %--------------------------------------------------------------------------
-function fitfunc(name,a,material,F_exp,dc_min,dc_max,alpha_min, ...
+function fit_algorithm_ML(name,a,material,F_exp,dc_min,dc_max,alpha_min,...
             alpha_max,sigma_min,sigma_max,R_min,R_max,k_max,n_max,s,resolu)
 % number of iterations
 N_max = 2 * n_max^4 * k_max * length(a.z)  % Eq. (18) from paper
@@ -51,9 +51,9 @@ for n_R=1:n_max
         counter = counter+1;
         disp([num2str(counter) ' of ' num2str(counter_tot)]);
         
-        % "Fourier Analysis" subroutine (we don't use "calculateFsim2D()"
-        % because we need different radii for the horizontal and vertical
-        % directions
+        % "Fourier Analysis" subroutine [we don't use "calculateFsim2D()"
+        % because we simulate different curvature radii for the horizontal
+        % and vertical directions]
         for ii = 1:2 % Loop bor both horizontal and vertical directions
           a.RR        = R(ii);
           a.sigma     = sigma(ii);
@@ -87,6 +87,6 @@ end % --> k
 %--------------------------------------------------------------------------
 % 3.) Save to file
 %--------------------------------------------------------------------------
-save(name,'a','duty_H','duty_V','ang_H','ang_V','src_H','src_V', ...
+save(name,'a','F_exp','duty_H','duty_V','ang_H','ang_V','src_H','src_V',...
      'rad_H','rad_V','resolu');
 end

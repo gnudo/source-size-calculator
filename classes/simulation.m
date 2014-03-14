@@ -91,7 +91,7 @@ methods
         % when setting a different curvature R2 for the wavefront in the
         % vertical direction, a "scaling factor" is calculated that is
         % used in Eq. (11) for the y-direction [see waveFieldGrat()]
-        obj.R2     = value;
+        obj.R2   = value;
         obj.scal = obj.R/obj.R2;
     end
     function calcRefracAbsorb(obj,material,density)
@@ -218,7 +218,7 @@ methods
         % z-axis and taking account of the mutual coherence (principle from
         % Weitkamp-paper with Gaussian src). implements Eqs. (9) and (10).
         w    = (z + (z==0)*1e-9) * (obj.sigma/obj.R); % if z=0, set z=1e-9
-        sigm_sq = w^2/(8*log(2));
+        sigm_sq  = w^2/(8*log(2));
         srcgauss = exp( -(1/2).* (obj.y0.^2)./ sigm_sq);
         srcgauss = srcgauss./sum(srcgauss);           % normalized Gauss
         
@@ -236,10 +236,10 @@ methods
         w    = (z + (z==0).*1e-9) * (obj.sigma/obj.R); % if z=0, set z=1e-9
         sigm_sq = w.^2/(8.*log(2));
         
-        [XX YY] = meshgrid(obj.y0,obj.y0);
+        [XX YY]  = meshgrid(obj.y0,obj.y0);
         
-        gaussX = exp(-(1/2).*(XX.^2)./sigm_sq(1));
-        gaussY = exp(-(1/2).*(YY.^2)./sigm_sq(2));
+        gaussX   = exp(-(1/2).*(XX.^2)./sigm_sq(1));
+        gaussY   = exp(-(1/2).*(YY.^2)./sigm_sq(2));
         srcgauss = gaussX .* gaussY;
         srcgauss = srcgauss./sum(sum(srcgauss));       % normalized Gauss
         

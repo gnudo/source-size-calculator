@@ -1,7 +1,7 @@
 % Function for calculating the energy and source size uncertainties
 % according to Eqs. (19) and (20) from Lovric et al., Opt. Express 22,
-% 2745 (2014). For solving the equations, we make use of the Newton method
-% (http://en.wikipedia.org/wiki/Newton_method).
+% 2745 (2014): http://doi.org/q9m. For solving the equations, we make use
+% of the Newton method (http://en.wikipedia.org/wiki/Newton_method).
 %--------------------------------------------------------------------------
 % Date: 2014-02-28
 % Author: Goran Lovric
@@ -49,7 +49,6 @@ while f_H > eps || f_V > eps
     sigma_H_start = sigma_H_start - del_p_H(1) ./ f_H_prime; % Newton iter.
     sigma_V_start = sigma_V_start - del_p_V(1) ./ f_V_prime; % Newton iter.
 end % --> while
-
 del_sigma = [d_sigma_H(1) d_sigma_V(1)];
 
 % (3) We repeat the same for Eq. (20)
@@ -63,10 +62,8 @@ while ff > eps
         del_p(ii) = a.weightedLSE(F_simH2,F_simH) - max([p_H p_V]);
     end
     ff = del_p(1);
-
     ff_prime = (del_p(2)-del_p(1))/(d_E(2)-d_E(1));
     E_start = E_start - del_p(1) ./ ff_prime;            % Newton iteration
 end % --> while
-
 del_E = d_E(1)*3;  % according to Eq. (26)
 end
