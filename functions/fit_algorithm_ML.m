@@ -1,6 +1,6 @@
 % Implementation of the fitting algorithm according to Fig. 3 from paper
 % Lovric et al., Opt. Express 22, 2745 (2014): http://doi.org/q9m.
-% --> Modification for the characterization of the multilayer
+% --> Modification for the characterization of the multilayer (ML)
 % characterization: E is constant; curvature is taken as a fit parameter.
 %--------------------------------------------------------------------------
 % Date: 2014-01-24

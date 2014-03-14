@@ -23,7 +23,7 @@ classdef simulation < handle
         psize      % [m] px size of detector
         R          % [m] radius of incidient wave curvature
         R2         % [m] radius of vertical wavefron curvature (used in 2D)
-        RR         % [m] radius of incident wave curvature used for ML fit
+        RR         % [m] radius of wave curvature used for refl. beam fit
         sigma      % [m] source size of beam for simulation
         z          % [m] array of all propagation distances
     end
