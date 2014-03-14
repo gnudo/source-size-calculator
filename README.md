@@ -24,7 +24,7 @@ Best way to start using the tools is to run `demo.m` from root folder. It consis
 
 ## Roadmap
 
-With version 1.1.0, all functions have been implemented that were originally planned. As we are continuing to work with the tools, small fixes etc. will be applied when necessary.
+With version 1.1.0 all functions have been implemented that were originally planned. As we are continuing to work with the tools, small fixes etc. will be applied when necessary.
 
-Remaing functions to be added in an eventual future 1.2.0 release are the following:
+Remaing function(s) to be added in an eventual future 1.2.0 release are the following:
 - determine magnification from experimental data automatically.
