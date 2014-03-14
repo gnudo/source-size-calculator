@@ -10,21 +10,21 @@ close all;clc;clear;
 %--------------------------------------------------------------------------
 % 0.) Create "fake" experimental data (takes ~5min)
 %--------------------------------------------------------------------------
-run examples/synthetic_data
+run examples/create_fake_data
 
 %--------------------------------------------------------------------------
 % 1.) Run fitting algorithm
 %--------------------------------------------------------------------------
 if ~exist('examples/results.mat', 'file')
-    run examples/fitting
+    run examples/run_fit
 end
 
 %--------------------------------------------------------------------------
 % 2.) Calculate uncertainties
 %--------------------------------------------------------------------------
-run examples/uncertainty_calc
+run examples/run_uncertainty_calc
 
 %--------------------------------------------------------------------------
 % 3.) Print all results
 %--------------------------------------------------------------------------
-run examples/print_all
+run examples/show_results

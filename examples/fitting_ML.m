@@ -1,4 +1,4 @@
-% This is a wrapper script for performing the fitting algorithm on
+% This is a wrapper script to perform the multilayer characterization on
 % "experimental" data (located in "a.nameDest" dir). Adjust section 1.)
 % with correct parameters from your experiment.
 %--------------------------------------------------------------------------
