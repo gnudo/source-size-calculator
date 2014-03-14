@@ -1,4 +1,5 @@
-% Run full test to demonstrate algorithm chain for source size calculation.
+% Run full test to demonstrate algorithm chain for source size calculation
+% from Lovric et al., Opt. Express 22, 2745 (2014): http://doi.org/q9m
 %--------------------------------------------------------------------------
 % Date: 2013-12-20
 % Author: Goran Lovric
@@ -7,12 +8,12 @@
 close all;clc;clear;
 
 %--------------------------------------------------------------------------
-% 0.) create "fake" experimental data (takes ~5min)
+% 0.) Create "fake" experimental data (takes ~5min)
 %--------------------------------------------------------------------------
 run examples/synthetic_data
 
 %--------------------------------------------------------------------------
-% 1.) Apply the fitting algorithm from G. Lovric et. al. (submitted)
+% 1.) Run fitting algorithm
 %--------------------------------------------------------------------------
 if ~exist('examples/results.mat', 'file')
     run examples/fitting

@@ -1,5 +1,5 @@
 % Creates synthetic Talbot images in folder "exp_data_refl_beam" for
-% demonstrating the results of the multilayer characterization measurement
+% demonstrating the results of the multilayer characterization experiment
 % according to the setup of Rack et al., JSR 17, 496-510 (2010).
 %--------------------------------------------------------------------------
 % Date: 2014-01-24

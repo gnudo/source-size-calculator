@@ -3,7 +3,7 @@
 ## Introduction
 
 The following package contains the source size calculation tools introduced by Lovric _et al._ [Opt. Express 22, 2745 (2014), http://doi.org/q9m].
-Feel free to report any kind of bugs or suggestions for improvement: [here](https://github.com/gnudo/source-size-calculator/issues)
+Feel free to report any kind of [bugs or suggestions for improvement](https://github.com/gnudo/source-size-calculator/issues) or contact the authors for further questions.
 
 ## Structure
 
@@ -24,7 +24,7 @@ Best way to start using the tools is to run `demo.m` from root folder. It consis
 
 ## Roadmap
 
-Following points still remain to be added:
+With version 1.1.0, all functions have been implemented that were originally planned. As we are continuing to work with the tools, small fixes etc. will be applied when necessary.
 
-- rebase `functions` and `examples` folders to reduce redundancies
-- determine magnification from experimental data automatically
+Remaing functions to be added in an eventual future 1.2.0 release are the following:
+- determine magnification from experimental data automatically.

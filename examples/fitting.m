@@ -1,6 +1,6 @@
-% Performs the fitting algorithm on "experimental" data, being located in
+% Performs the fitting algorithm on "experimental" data, that is located in
 % "a.nameDest" folder. To apply on arbitrary experimental data, adjust
-% section 1.) with correct parameters from your experiment
+% section 1.) with correct parameters from your experiment.
 %--------------------------------------------------------------------------
 % Date: 2013-12-20
 % Author: Goran Lovric
@@ -44,8 +44,8 @@ resolu     = 512;                 % resolution for Talbot images simulation
 % 2.) Calculate Fourier coefficients from experimental data
 %--------------------------------------------------------------------------
 for jj=1:length(a.z)
-	img     = a.loadSmallImg(jj);           % load experimental Talbot imgs
-    [F_Hi F_Vi] = a.FourierAnalysis2D(img,jj); % extract 1st F-coefficients
+	img = a.loadSmallImg(jj);               % load experimental Talbot imgs
+    [F_Hi,F_Vi] = a.FourierAnalysis2D(img,jj); % extract 1st F-coefficients
     F_exp(jj,1) = F_Hi;
     F_exp(jj,2) = F_Vi;
 end
@@ -53,5 +53,5 @@ end
 %--------------------------------------------------------------------------
 % 3.) Run fitting algorithm with the above parameters
 %--------------------------------------------------------------------------
-fitfunc('results',a,'Au',F_exp,dc_min,dc_max,alpha_min, ...
+fit_algorithm('results',a,'Au',F_exp,dc_min,dc_max,alpha_min, ...
            alpha_max,sigma_min,sigma_max,E_min,E_max,k_max,n_max,s,resolu);

@@ -47,7 +47,7 @@ f = a.waveFieldGrat(gra);    % calculate wavefront after grating
 %--------------------------------------------------------------------------
 % 4.) Propagation along z-axis
 %--------------------------------------------------------------------------
-[x y] = meshgrid(round(-10/2):round(10/2), round(-10/2):round(10/2));
+[x,y] = meshgrid(round(-10/2):round(10/2), round(-10/2):round(10/2));
 gauss = exp( (-x.^2./2) - (y.^2./2) );
 gauss = gauss./sum(gauss(:));
 
