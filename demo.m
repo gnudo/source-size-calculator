@@ -9,7 +9,7 @@ close all;clc;clear;
 %--------------------------------------------------------------------------
 % 0.) create "fake" experimental data (takes ~5min)
 %--------------------------------------------------------------------------
-%run examples/synthetic_data
+run examples/synthetic_data
 
 %--------------------------------------------------------------------------
 % 1.) Apply the fitting algorithm from G. Lovric et. al. (submitted)

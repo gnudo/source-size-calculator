@@ -19,21 +19,21 @@ p_start_HV = inf;
 % Create interval objects for horizontal an vertial directions
 duty_H  = interval(dc_min,dc_max);
 duty_V  = interval(dc_min,dc_max);
-ang_H = interval(alpha_min,alpha_max);
-ang_V = interval(alpha_min,alpha_max);
-src_H = interval(sigma_min,sigma_max);
-src_V = interval(sigma_min,sigma_max);
-ene   = interval(E_min,E_max);
+ang_H   = interval(alpha_min,alpha_max);
+ang_V   = interval(alpha_min,alpha_max);
+src_H   = interval(sigma_min,sigma_max);
+src_V   = interval(sigma_min,sigma_max);
+ene     = interval(E_min,E_max);
 
 for k=1:k_max
 % "Nest intervals" subroutine (for each fitting parameter)
-dcH    = duty_H.nestIntervals(n_max,s);
-dcV    = duty_V.nestIntervals(n_max,s);
-alphaH = ang_H.nestIntervals(n_max,s);
-alphaV = ang_V.nestIntervals(n_max,s);
-sigmaH = src_H.nestIntervals(n_max,s);
-sigmaV = src_V.nestIntervals(n_max,s);
-E      = ene.nestIntervals(n_max,s);
+dcH     = duty_H.nestIntervals(n_max,s);
+dcV     = duty_V.nestIntervals(n_max,s);
+alphaH  = ang_H.nestIntervals(n_max,s);
+alphaV  = ang_V.nestIntervals(n_max,s);
+sigmaH  = src_H.nestIntervals(n_max,s);
+sigmaV  = src_V.nestIntervals(n_max,s);
+E       = ene.nestIntervals(n_max,s);
 
 for n_E=1:n_max
   a.E = E(n_E);

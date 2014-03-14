@@ -44,8 +44,8 @@ resolu     = 512;                 % resolution for Talbot images simulation
 % 2.) Calculate Fourier coefficients from experimental data
 %--------------------------------------------------------------------------
 for jj=1:length(a.z)
-	img     = a.loadSmallImg(jj);     % load experimental Talbot imgs
-    [F_Hi F_Vi] = a.FourierAnalysis2D(img,jj);  % extract first Fourier coefficients
+	img     = a.loadSmallImg(jj);           % load experimental Talbot imgs
+    [F_Hi F_Vi] = a.FourierAnalysis2D(img,jj); % extract 1st F-coefficients
     F_exp(jj,1) = F_Hi;
     F_exp(jj,2) = F_Vi;
 end

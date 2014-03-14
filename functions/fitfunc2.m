@@ -25,19 +25,19 @@ ang_H   = interval(alpha_min,alpha_max);
 ang_V   = interval(alpha_min,alpha_max);
 src_H   = interval(sigma_min,sigma_max);
 src_V   = interval(sigma_min,sigma_max);
-rad_H = interval(R_min,R_max);
-rad_V = interval(R_min,R_max);
+rad_H   = interval(R_min,R_max);
+rad_V   = interval(R_min,R_max);
 
 for k=1:k_max
 % "Nest intervals" subroutine (for each fitting parameter)
-dcH    = duty_H.nestIntervals(n_max,s);
-dcV    = duty_V.nestIntervals(n_max,s);
-alphaH = ang_H.nestIntervals(n_max,s);
-alphaV = ang_V.nestIntervals(n_max,s);
-sigmaH = src_H.nestIntervals(n_max,s);
-sigmaV = src_V.nestIntervals(n_max,s);
-R_H    = rad_H.nestIntervals(n_max,s)
-R_V    = rad_V.nestIntervals(n_max,s)
+dcH     = duty_H.nestIntervals(n_max,s);
+dcV     = duty_V.nestIntervals(n_max,s);
+alphaH  = ang_H.nestIntervals(n_max,s);
+alphaV  = ang_V.nestIntervals(n_max,s);
+sigmaH  = src_H.nestIntervals(n_max,s);
+sigmaV  = src_V.nestIntervals(n_max,s);
+R_H     = rad_H.nestIntervals(n_max,s);
+R_V     = rad_V.nestIntervals(n_max,s);
 
 for n_R=1:n_max
   R = [R_H(n_R) R_V(n_R)];

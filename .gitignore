@@ -7,4 +7,5 @@
 /examples/synthetic_data.m~
 /examples/exp_data*
 /examples/results.mat
+/examples/results_ML.mat
 /scripts/fitfunc.m~
