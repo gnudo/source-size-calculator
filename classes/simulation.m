@@ -22,7 +22,8 @@ classdef simulation < handle
         M          % magnification due to beam divergence
         psize      % [m] px size of detector
         R          % [m] radius of incidient wave curvature
-        RR         % [m] radius of incident wave curvature used for ML fit
+        R2         % [m] radius of vertical wavefron curvature (used in 2D)
+        RR         % [m] radius of wave curvature used for refl. beam fit
         sigma      % [m] source size of beam for simulation
         z          % [m] array of all propagation distances
     end
@@ -40,6 +41,7 @@ classdef simulation < handle
         per_approx % [px] approx. period due to beam divergence
         periods    % [1] grating-size (in terms of periods)
         phShift    % [1] grating phase shift
+        scal       % [1] scaling factor for y-coordinate (when R2 is set)
         u          % [1/m] grating coordinates in k-space
         usewin     % switch whether to use window function
         y0         % [m] grating coordinates
@@ -84,6 +86,13 @@ methods
         % exponent to be put in Eq. (11). see below "waveFieldGrat()"
         obj.absorb = 1-value + (value == 1)*eps;    % Matlab-related
         obj.absorb_exp = log(obj.absorb)/2;
+    end
+    function set.R2(obj,value)
+        % when setting a different curvature R2 for the wavefront in the
+        % vertical direction, a "scaling factor" is calculated that is
+        % used in Eq. (11) for the y-direction [see waveFieldGrat()]
+        obj.R2   = value;
+        obj.scal = obj.R/obj.R2;
     end
     function calcRefracAbsorb(obj,material,density)
         % here we make use of the external "xray-interaction-constants"
@@ -177,18 +186,19 @@ methods
             YY = 0;
         end
         
-        % Check whether "phase shift" and "absorption" level are set. Run
-        % e.g. obj.calcRefracAbsorb(17) before obj.waveFieldGrat.
+        % Check whether "phase shift" and "absorption" level are set.
         if isempty(obj.phShift) || isempty(obj.absorb_exp)
             error(['obj.phShift and obj.absorb_exp must be set before', ...
                    ' running obj.waveFieldGrat(G)! Either use the', ...
                    ' method calcRefracAbsorb() or manually set', ...
                    '"phShift" and "absorb" properties.']);
         end 
-        
+        if isempty(obj.scal)
+            obj.scal = 1;
+        end
         % Eq. (11) from paper
         f  = exp( i.*obj.phShift.*G ) .*exp( obj.absorb_exp.*G ) .* ...
-                              exp( i.*obj.k.*sqrt(obj.RR.^2+XX.^2+YY.^2) );
+                  exp( i.*obj.k.*sqrt(obj.RR.^2+XX.^2+obj.scal.*(YY).^2) );
     end
     function psi = waveFieldProp (obj, z, f)
         % calculates the itensity of a propagated wave field f along the
@@ -208,7 +218,7 @@ methods
         % z-axis and taking account of the mutual coherence (principle from
         % Weitkamp-paper with Gaussian src). implements Eqs. (9) and (10).
         w    = (z + (z==0)*1e-9) * (obj.sigma/obj.R); % if z=0, set z=1e-9
-        sigm_sq = w^2/(8*log(2));
+        sigm_sq  = w^2/(8*log(2));
         srcgauss = exp( -(1/2).* (obj.y0.^2)./ sigm_sq);
         srcgauss = srcgauss./sum(srcgauss);           % normalized Gauss
         
@@ -226,10 +236,10 @@ methods
         w    = (z + (z==0).*1e-9) * (obj.sigma/obj.R); % if z=0, set z=1e-9
         sigm_sq = w.^2/(8.*log(2));
         
-        [XX YY] = meshgrid(obj.y0,obj.y0);
+        [XX YY]  = meshgrid(obj.y0,obj.y0);
         
-        gaussX = exp(-(1/2).*(XX.^2)./sigm_sq(1));
-        gaussY = exp(-(1/2).*(YY.^2)./sigm_sq(2));
+        gaussX   = exp(-(1/2).*(XX.^2)./sigm_sq(1));
+        gaussY   = exp(-(1/2).*(YY.^2)./sigm_sq(2));
         srcgauss = gaussX .* gaussY;
         srcgauss = srcgauss./sum(sum(srcgauss));       % normalized Gauss
         

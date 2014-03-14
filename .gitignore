@@ -2,9 +2,9 @@
 /README.md~
 /classes/simulation.m~
 /classes/interval.m~
-/examples/fitting.m~
-/examples/synth_kev_simFIT.mat
-/examples/synthetic_data.m~
+/examples/run_fit.m~
+/examples/create_fake_data.m~
 /examples/exp_data*
 /examples/results.mat
-/scripts/fitfunc.m~
+/examples/results_ML.mat
+/functions/fit_algorithm.m~

@@ -1,4 +1,4 @@
-% Print and plot results for source sizes and uncertainties
+% Print and plot results for source sizes and uncertainties.
 %--------------------------------------------------------------------------
 % Date: 2014-02-28
 % Author: Goran Lovric

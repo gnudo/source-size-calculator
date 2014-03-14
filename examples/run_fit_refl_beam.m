@@ -1,6 +1,6 @@
-% Performs the fitting algorithm on "experimental" data, being located in
-% "a.nameDest" folder. To apply on arbitrary experimental data, adjust
-% section 1.) with correct parameters from your experiment
+% This is a wrapper script to perform the multilayer characterization on
+% "experimental" data (located in "a.nameDest" dir). Adjust section 1.)
+% with correct parameters from your experiment.
 %--------------------------------------------------------------------------
 % Date: 2013-12-20
 % Author: Goran Lovric
@@ -15,12 +15,12 @@ a = simulation;                   % load methods for calculation
 %--------------------------------------------------------------------------
 % 1.) Experimental parameters + fitting parameter margins
 %--------------------------------------------------------------------------
-a.nameDest = 'exp_data_ML';       % folder that contains experimental data
+a.nameDest = 'exp_data_refl_beam';% folder that contains experimental data
 a.psize    = 0.76e-6;             % [m] px size of detector
 a.R        = 25;                  % [m] source-to-grating distance
 a.a        = 6.84e-6;             % [m] grating period
-a.z        = linspace(0,1.1,111); % [m] experimental propagation distances
-a.usewin   = 0;                   % apply Tukey/Hanning window function
+a.z        = linspace(0,1.1,56);  % [m] experimental propagation distances
+a.usewin   = 1;                   % apply Tukey/Hanning window function
 a.E        = 18;                  % [keV] X-ray energy
 
 a.h        = 3.39e-6;             % [m] height of grating structure
@@ -45,8 +45,8 @@ resolu     = 512;                 % resolution for Talbot images simulation
 % 2.) Calculate Fourier coefficients from experimental data
 %--------------------------------------------------------------------------
 for jj=1:length(a.z)
-	img     = a.loadSmallImg(jj);    % load experimental Talbot imgs
-    [F_Hi F_Vi] = a.FourierAnalysis2D(img,jj); % extract first Fourier coefficients
+	img         = a.loadSmallImg(jj);       % load experimental Talbot imgs
+    [F_Hi F_Vi] = a.FourierAnalysis2D(img,jj); % extract 1st F-coefficients
     F_exp(jj,1) = F_Hi;
     F_exp(jj,2) = F_Vi;
 end
@@ -54,26 +54,26 @@ end
 %--------------------------------------------------------------------------
 % 3.) Run fitting algorithm with the above parameters (or load results)
 %--------------------------------------------------------------------------
-if ~exist('results_fitting_ML.mat', 'file')
-    fitfunc2('results_fitting_ML',a,'Au',F_exp,dc_min,dc_max,alpha_min, ...
+if ~exist('results_ML.mat', 'file')
+    fit_algorithm_ML('results_ML',a,'Au',F_exp,dc_min,dc_max,alpha_min, ...
            alpha_max,sigma_min,sigma_max,R_min,R_max,k_max,n_max,s,resolu);
 end
-load('results_fitting_ML.mat')
+load('results_ML.mat')
 
 %--------------------------------------------------------------------------
 % 4.) Simulate F-coefficients from the loaded parameters (for plotting)
 %--------------------------------------------------------------------------
-a.sigma   = src_H.val;
-a.dc      = duty_H.val;
-a.alpha   = ang_H.val;
-a.RR      = rad_H.val;
-F_simH = a.calculateFsim(resolu);
+a.sigma = src_H.val;
+a.dc    = duty_H.val;
+a.alpha = ang_H.val;
+a.RR    = rad_H.val;
+F_simH  = a.calculateFsim(resolu);
 
-a.sigma   = src_V.val;
-a.dc      = duty_V.val;
-a.alpha   = ang_V.val;
-a.RR      = rad_V.val;
-F_simV = a.calculateFsim(resolu);
+a.sigma = src_V.val;
+a.dc    = duty_V.val;
+a.alpha = ang_V.val;
+a.RR    = rad_V.val;
+F_simV  = a.calculateFsim(resolu);
 
 %--------------------------------------------------------------------------
 % 5.) Print and plot the results
@@ -98,6 +98,8 @@ fprintf('\n');
 disp(['R = (' num2str(rad_H.val) ' +- ' num2str(rad_H.del) ') m']);
 disp(['R = (' num2str(rad_V.val) ' +- ' num2str(rad_V.del) ') m']);
 
+disp(['Note that these are not physical uncertainties, but just from', ...
+     ' the fitting procedure!'])
 % Plot Fourier coefficients
 fig1 = figure;
     set(fig1,'Position',[80 680 800 248]);
