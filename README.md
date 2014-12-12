@@ -9,13 +9,13 @@ Feel free to report any kind of [bugs or suggestions for improvement](https://gi
 
 The tools consist of the following 3 layers (folders), listed from bottom to top:
 
-- `classes`: contains all methods for calculating source sizes, interval nesting etc.
-- `functions`: contains implementations for both the source size calculation and the multilayer characterization as well as the calculations for energy and source size uncertainties. They are implemented as Matlab functions. 
-- `examples`: contains examples that can be run to see how the tools work. All methods are called from scripts located in this folder and all constants/parameters are set in scripts within this folder.
+- [`classes`](classes): contains all methods for calculating source sizes, interval nesting etc.
+- [`scripts`](scripts): contains implementations for both the source size calculation and the multilayer characterization as well as the calculations for energy and source size uncertainties. They are implemented as Matlab functions. 
+- [`examples`](examples): contains examples that can be run to see how the tools work. All methods are called from scripts located in this folder and all constants/parameters are set in scripts within this folder.
 
 ## Tutorial
 
-Best way to start using the tools is to run `demo.m` from root folder. It consists of 4 parts and basically includes all steps that are presented in the paper:
+Best way to start using the tools is to run [`demo.m`](demo.m) from root folder. It consists of 4 parts and basically includes all steps that are presented in the paper:
 
 1. Creation of a subfolder called `exp_data` with "fake" experimental data.
 2. Run fitting algorithm on these data and save all results in a file called "results.mat"
